@@ -11,9 +11,11 @@ import {
   ArrowUpDown,
   Search,
   CheckCircle2,
-  Check
+  Check,
+  Sprout,
+  ArrowRight
 } from 'lucide-react';
-import { Product, LanguageCode, User } from '../types';
+import { Product, LanguageCode } from '../types';
 import { translations } from '../data/translations';
 
 interface MarketplaceProps {
@@ -59,7 +61,6 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
         if (sortBy === 'rating') return b.rating - a.rating;
         if (sortBy === 'distance') return a.farmDistanceKm - b.farmDistanceKm;
         if (sortBy === 'freshness') {
-          // Compare harvest timestamps or dates
           return b.harvestDate.localeCompare(a.harvestDate);
         }
         if (sortBy === 'price_low') return a.price - b.price;
@@ -79,77 +80,103 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
   ];
 
   return (
-    <div className="space-y-10 pb-16 animate-fadeIn">
-      {/* Hero Section */}
-      <section className="relative rounded-3xl overflow-hidden mx-4 sm:mx-6 lg:mx-8 mt-4 border border-stone-200 shadow-sm bg-stone-900">
-        <div className="relative aspect-[16/9] sm:aspect-[21/9] max-h-[460px] w-full overflow-hidden">
+    <div className="space-y-10 pb-16 relative z-10 animate-fadeIn">
+      {/* 1. Main Hero Section (Faithfully matching user's uploaded reference image) */}
+      <section className="relative overflow-hidden w-full bg-stone-900 border-b border-stone-200">
+        <div className="relative min-h-[500px] lg:min-h-[580px] w-full flex items-center">
+          {/* Background Tractor & Green Wheat Field Image */}
           <img
-            src="/src/assets/images/hero_organic_farm_fresh_1791021810264.jpg"
-            alt="Lush organic farm at sunrise"
+            src="/src/assets/images/hero_nutrify_tractor_field_1791023332618.jpg"
+            alt="Modern green agricultural tractor working in lush emerald wheat field"
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover opacity-85 scale-105 hover:scale-100 transition-transform duration-1000"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
-          {/* Measured Contrast Scrim */}
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/60 to-transparent" />
 
-          {/* Hero Content */}
-          <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 lg:p-12 max-w-3xl">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Direct Harvest · 0% Intermediary Margin · 100% to Rural Farmers</span>
-            </div>
+          {/* Measured Green & Sunlight Contrast Scrim */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#072410]/95 via-[#0b3317]/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#051a0b]/80 via-transparent to-black/30" />
 
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white font-serif-display leading-tight text-balance">
-              {t.heroHeadline}
-            </h1>
+          {/* Hero Content Container */}
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
+            <div className="max-w-2xl space-y-5">
+              {/* Green Pill Badge: 100% Organic & Natural (Exact match to reference) */}
+              <div className="inline-flex items-center gap-2 bg-emerald-900/80 backdrop-blur-md border border-emerald-400/40 text-emerald-200 text-xs font-semibold px-4 py-1.5 rounded-full shadow-sm">
+                <Sprout className="w-3.5 h-3.5 text-emerald-300" />
+                <span>100% Organic & Natural</span>
+              </div>
 
-            <p className="text-xs sm:text-sm text-stone-200 mt-3 max-w-xl leading-relaxed text-balance">
-              {t.heroSubheadline}
-            </p>
+              {/* Main Headline (Playfair serif display typography) */}
+              <div className="space-y-1">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white font-serif-display tracking-tight leading-[1.1]">
+                  Organic Fertilizers
+                </h1>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-emerald-300 font-serif-display">
+                  For Healthier Crops
+                </p>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-3 mt-6">
-              <a
-                href="#catalog"
-                className="bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs py-2.5 px-5 rounded-xl transition-colors shadow-sm flex items-center gap-2"
-              >
-                <span>{t.exploreProduce}</span>
-                <span aria-hidden="true">↓</span>
-              </a>
+              {/* Subtitle Description */}
+              <p className="text-sm sm:text-base text-stone-200 leading-relaxed max-w-xl text-balance">
+                Premium 100% organic fertilizers & farm-fresh harvests scientifically formulated to improve soil health, enhance root development, and boost crop yield naturally. Direct from verified rural farmers to urban consumers.
+              </p>
 
-              <button
-                onClick={onNavigateToFarmer}
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-semibold text-xs py-2.5 px-4 rounded-xl border border-white/20 transition-colors"
-              >
-                {t.farmerDashboardBtn}
-              </button>
+              {/* Action Buttons: Explore Products & Contact Us */}
+              <div className="flex flex-wrap items-center gap-4 pt-3">
+                <a
+                  href="#catalog"
+                  className="bg-[#15803d] hover:bg-[#166534] text-white font-bold text-xs sm:text-sm py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 group"
+                >
+                  <span>Explore Products</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </a>
+
+                <button
+                  onClick={onNavigateToFarmer}
+                  className="bg-black/30 hover:bg-black/50 text-white font-semibold text-xs sm:text-sm py-3 px-6 rounded-lg border border-white/60 backdrop-blur-sm transition-all"
+                >
+                  Contact Us / Farmer Portal
+                </button>
+              </div>
+
+              {/* Trust markers */}
+              <div className="flex items-center gap-6 pt-2 text-xs text-stone-300">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  0% Intermediary Fee
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  Govt Land Verified Farmers
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* APMC Mandi Fair-Price Guarantee Banner */}
+      {/* 2. Direct Fair-Price APMC Guarantee Banner */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-emerald-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm border border-emerald-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-800/80 flex items-center justify-center text-white shrink-0 mt-0.5">
-              <TrendingUp className="w-5 h-5 text-emerald-300" />
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-[#0e3b1c] text-white rounded-2xl p-5 sm:p-6 shadow-md border border-emerald-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-emerald-800 flex items-center justify-center text-white shrink-0 mt-0.5 shadow-xs">
+              <TrendingUp className="w-6 h-6 text-emerald-300" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm sm:text-base font-serif-display text-white">
+                <h3 className="font-bold text-base sm:text-lg font-serif-display text-white">
                   Direct Fair-Trade Realization Index
                 </h3>
-                <span className="text-[11px] bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded font-mono font-bold">
+                <span className="text-[10px] bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded font-mono font-bold uppercase">
                   Zero Commission
                 </span>
               </div>
               <p className="text-xs text-emerald-200/90 mt-1 max-w-2xl leading-relaxed">
-                In traditional mandi auctions, farmers receive only 40-55% of your grocery spend. On KisanSetu, 100% of the produce value is transferred directly to the farmer via DBT/UPI.
+                In traditional mandi auctions, farmers receive only 40-55% of consumer grocery spend. On KisanSetu / Nutrify Organics, 100% of the produce value is transferred directly to the farmer via DBT or instant UPI.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 bg-emerald-950/60 border border-emerald-700/50 p-3 rounded-xl shrink-0 text-xs">
+          <div className="flex items-center gap-4 bg-emerald-950/70 border border-emerald-700/60 p-3 rounded-xl shrink-0 text-xs">
             <div>
               <span className="text-[10px] text-emerald-300 block uppercase tracking-wider">Farmer Earning</span>
               <span className="text-base font-bold text-emerald-100 font-numeric">+38% Direct</span>
@@ -163,10 +190,10 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
         </div>
       </section>
 
-      {/* Main Catalog Section */}
+      {/* 3. Main Catalog Section with Leafy Background Integration */}
       <section id="catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Controls: Search, Verified Toggle, Sort, Categories */}
-        <div className="space-y-4">
+        <div className="space-y-4 bg-white/90 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs">
           {/* Top Filter Bar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Search Input */}
@@ -176,7 +203,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search farm crops, vegetables, village name, farmer..."
+                placeholder="Search farm crops, organic bio-nutrients, village, farmer..."
                 className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700"
               />
             </div>
@@ -217,8 +244,8 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
             </div>
           </div>
 
-          {/* Interactive Category Tabs (Buttons, not pills) */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-stone-200">
+          {/* Interactive Category Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-t border-stone-100 pt-3">
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -235,9 +262,9 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
           </div>
         </div>
 
-        {/* Product Grid */}
+        {/* Product Grid with Premium Hover Animation */}
         {filteredProducts.length === 0 ? (
-          <div className="py-20 text-center space-y-3 bg-white rounded-2xl border border-stone-200 p-8">
+          <div className="py-20 text-center space-y-3 bg-white/95 rounded-2xl border border-stone-200 p-8">
             <div className="w-12 h-12 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center mx-auto text-xl">
               🔍
             </div>
@@ -263,7 +290,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="group bg-white rounded-2xl border border-stone-200 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between overflow-hidden"
+                className="group bg-white rounded-2xl border border-stone-200 shadow-2xs product-card-premium flex flex-col justify-between overflow-hidden relative"
               >
                 <div>
                   {/* Product Card Image (Takes 65-75% visual lead) */}
@@ -275,7 +302,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
                       src={product.image}
                       alt={product.name}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                         const el = document.getElementById(`card-fallback-${product.id}`);
@@ -292,7 +319,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
                     </div>
 
                     {/* Top Corner: Distance to consumer */}
-                    <div className="absolute top-2.5 right-2.5 bg-stone-900/80 backdrop-blur-xs text-white text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1 font-numeric">
+                    <div className="absolute top-2.5 right-2.5 bg-stone-900/80 backdrop-blur-xs text-white text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1 font-numeric shadow-xs">
                       <MapPin className="w-3 h-3 text-emerald-400" />
                       <span>{product.farmDistanceKm} km</span>
                     </div>

@@ -13,6 +13,7 @@ import { AwsDeploymentView } from './components/AwsDeploymentView';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { CartDrawer } from './components/CartDrawer';
 import { AuthModal } from './components/AuthModal';
+import { LeafyBackground } from './components/LeafyBackground';
 import { StorageService } from './services/storage';
 import { User, Product, CartItem, Order, LanguageCode, FarmerProfile } from './types';
 import { translations } from './data/translations';
@@ -126,7 +127,10 @@ export default function App() {
   const pendingSyncCount = StorageService.getOfflineQueue().length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 font-sans text-stone-900">
+    <div className="min-h-screen flex flex-col bg-[#f7f9f6] font-sans text-stone-900 relative">
+      {/* Botanical Leafy Background Layer & Ambient Sunlight Animation */}
+      <LeafyBackground />
+
       {/* Top Bar with Strict 3-zone contract */}
       <TopBar
         currentTab={currentTab}
@@ -240,27 +244,30 @@ export default function App() {
         language={language}
       />
 
-      {/* Quiet, anti-slop footer */}
-      <footer className="border-t border-stone-200 bg-white py-8 px-4 sm:px-6 lg:px-8 text-xs text-stone-500">
+      {/* Sophisticated Natural Agriculture Footer */}
+      <footer className="border-t border-stone-200/80 bg-white/90 backdrop-blur-xs py-8 px-4 sm:px-6 lg:px-8 text-xs text-stone-500 relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-stone-900 font-serif-display text-sm">{t.brandName}</span>
-            <span>·</span>
-            <span>Rural-to-Urban Direct Agricultural Commerce</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-center sm:text-left">
+            <span className="font-bold text-emerald-950 font-serif-display text-sm">Nutrify India Organics · {t.brandName}</span>
+            <span className="hidden sm:inline">·</span>
+            <span>+91 93400 74900 · office@nutrifyindiaorganics.in</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 text-stone-600">
-            <button onClick={() => setCurrentTab('marketplace')} className="hover:text-stone-900">
+          <div className="flex flex-wrap items-center justify-center gap-5 text-stone-600">
+            <button onClick={() => setCurrentTab('marketplace')} className="hover:text-emerald-800 transition-colors">
               {t.navMarketplace}
             </button>
-            <button onClick={() => setCurrentTab('farmer')} className="hover:text-stone-900">
+            <button onClick={() => setCurrentTab('farmer')} className="hover:text-emerald-800 transition-colors">
               {t.navFarmerDashboard}
             </button>
-            <button onClick={() => setCurrentTab('admin')} className="hover:text-stone-900">
+            <button onClick={() => setCurrentTab('admin')} className="hover:text-emerald-800 transition-colors">
               {t.navAdminVerification}
             </button>
-            <button onClick={() => setCurrentTab('aws')} className="hover:text-stone-900">
-              AWS Infrastructure & CI/CD
+            <button onClick={() => setCurrentTab('orders')} className="hover:text-emerald-800 transition-colors">
+              {t.navOrders}
+            </button>
+            <button onClick={() => setCurrentTab('aws')} className="hover:text-emerald-800 transition-colors">
+              AWS Cloud & CI/CD
             </button>
             <span>·</span>
             <span className="text-emerald-800 font-semibold">100% Direct Farmer Remittance</span>

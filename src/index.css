@@ -4,7 +4,8 @@
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     color: #1c1917;
-    background-color: #fafaf9;
+    background-color: #f7f9f6;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, .font-serif-display {
@@ -22,12 +23,146 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f5f5f4;
+  background: #f1f5f0;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d6d3d1;
+  background: #cbd5c8;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a29e;
+  background: #94a390;
 }
+
+/* Premium Leaf Floating & Gentle Breeze Keyframes */
+@keyframes leaf-float-1 {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.7;
+  }
+  35% {
+    transform: translate(14px, -24px) rotate(8deg);
+    opacity: 0.9;
+  }
+  65% {
+    transform: translate(-10px, -46px) rotate(-6deg);
+    opacity: 0.75;
+  }
+  85% {
+    transform: translate(8px, -20px) rotate(4deg);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.7;
+  }
+}
+
+@keyframes leaf-float-2 {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.65;
+  }
+  30% {
+    transform: translate(-16px, -30px) rotate(-12deg);
+    opacity: 0.85;
+  }
+  70% {
+    transform: translate(12px, -55px) rotate(9deg);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.65;
+  }
+}
+
+@keyframes leaf-float-3 {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 0.55;
+  }
+  40% {
+    transform: translate(20px, -38px) rotate(15deg) scale(1.04);
+    opacity: 0.8;
+  }
+  80% {
+    transform: translate(-12px, -20px) rotate(-8deg) scale(0.97);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 0.55;
+  }
+}
+
+@keyframes gentle-sway {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes sunlight-glow {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.08);
+  }
+}
+
+.animate-leaf-1 {
+  animation: leaf-float-1 14s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-leaf-2 {
+  animation: leaf-float-2 18s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-leaf-3 {
+  animation: leaf-float-3 22s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-leaf-4 {
+  animation: leaf-float-1 26s ease-in-out infinite reverse;
+  will-change: transform, opacity;
+}
+
+.animate-leaf-sway {
+  animation: gentle-sway 10s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-sunlight {
+  animation: sunlight-glow 8s ease-in-out infinite;
+}
+
+/* Accessibility: respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-leaf-1,
+  .animate-leaf-2,
+  .animate-leaf-3,
+  .animate-leaf-4,
+  .animate-leaf-sway,
+  .animate-sunlight {
+    animation: none !important;
+  }
+}
+
+/* Premium Product Card Hover */
+.product-card-premium {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.product-card-premium:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px -6px rgba(16, 88, 38, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+}
+
