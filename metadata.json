@@ -1,0 +1,6 @@
+{
+  "name": "KisanSetu - Direct Farm-to-Consumer Agriculture Platform",
+  "description": "Empowering local rural farmers to sell directly to urban consumers with verified farm badges, real-time delivery tracking, automated scheduling, offline rural capabilities, and comprehensive inventory analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
