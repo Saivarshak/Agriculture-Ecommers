@@ -19,7 +19,7 @@ import { XivaLogo } from './components/XivaLogo';
 import { StorageService } from './services/storage';
 import { User, Product, CartItem, Order, LanguageCode, FarmerProfile, ProductCategory } from './types';
 import { translations } from './data/translations';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Sprout } from 'lucide-react';
 
 export default function App() {
   const [currentCategory, setCurrentCategory] = useState<ProductCategory | 'all'>('all');
@@ -45,10 +45,6 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Offline simulation
-  const [isOfflineSimulated, setIsOfflineSimulated] = useState<boolean>(() => StorageService.getOfflineSimulated());
-  const [syncNotice, setSyncNotice] = useState<string | null>(null);
-
   const t = translations[language];
 
   // Refresh all state from localStorage
@@ -63,20 +59,6 @@ export default function App() {
   const handleLanguageChange = (lang: LanguageCode) => {
     setLanguage(lang);
     StorageService.setLanguage(lang);
-  };
-
-  const handleToggleOffline = () => {
-    const nextState = !isOfflineSimulated;
-    setIsOfflineSimulated(nextState);
-    StorageService.setOfflineSimulated(nextState);
-
-    if (!nextState) {
-      const count = StorageService.clearOfflineQueue();
-      if (count > 0) {
-        setSyncNotice(`Reconnected online! ${count} offline farm orders synchronized with dispatch cloud.`);
-        setTimeout(() => setSyncNotice(null), 5000);
-      }
-    }
   };
 
   // Wishlist toggle
@@ -154,22 +136,31 @@ export default function App() {
     (f) => f.id === user.farmId || f.email.toLowerCase() === user.email.toLowerCase()
   ) || farmers[0];
 
-  const pendingSyncCount = StorageService.getOfflineQueue().length;
-
   return (
     <div className="min-h-screen flex flex-col bg-[#f7f9f6] font-sans text-stone-900 relative">
       {/* Botanical Leafy Background Layer & Ambient Sunlight Animation */}
       <LeafyBackground />
 
-      {/* Top Bar (LOGO — Home - Cereals - Pulses - Vegetables - Fruits - Spices - Exotic - Search Box - Profile - Wishlist - Bag) */}
+      {/* Top Bar with Xiva.Org Navigation */}
       <TopBar
-        currentCategory={currentCategory}
+        currentTab={
+          currentView === 'store'
+            ? 'marketplace'
+            : currentView === 'farmer'
+            ? 'farmer'
+            : currentView === 'admin_verification'
+            ? 'admin'
+            : 'orders'
+        }
+        onSelectTab={(tab) => {
+          if (tab === 'marketplace') setCurrentView('store');
+          else if (tab === 'farmer') setCurrentView('farmer');
+          else if (tab === 'admin') setCurrentView('admin_verification');
+          else if (tab === 'orders') setCurrentView('orders');
+        }}
+        selectedCategory={currentCategory}
         onSelectCategory={(cat) => {
           setCurrentCategory(cat);
-          setCurrentView('store');
-        }}
-        onGoHome={() => {
-          setCurrentCategory('all');
           setCurrentView('store');
         }}
         cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
@@ -181,26 +172,11 @@ export default function App() {
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenAdminLogin={() => setIsAdminModalOpen(true)}
         onLogoutAdmin={handleAdminLogout}
-        onOpenAdminPortal={() => setIsAdminModalOpen(true)}
-        onOpenOrders={() => setCurrentView('orders')}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
         language={language}
         onSelectLanguage={handleLanguageChange}
-        isOfflineSimulated={isOfflineSimulated}
-        onToggleOffline={handleToggleOffline}
-        pendingSyncCount={pendingSyncCount}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
-
-      {/* Online Sync Notification Toast */}
-      {syncNotice && (
-        <div className="bg-emerald-800 text-white px-4 py-2.5 text-xs flex items-center justify-between shadow-md relative z-30">
-          <div className="max-w-7xl mx-auto w-full flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-            <span className="font-semibold">{syncNotice}</span>
-          </div>
-        </div>
-      )}
 
       {/* Main Content Area */}
       <main className="flex-1">
@@ -215,6 +191,8 @@ export default function App() {
             wishlistIds={wishlistIds}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            language={language}
+            onNavigateToFarmer={() => setCurrentView('farmer')}
           />
         )}
 
@@ -274,7 +252,6 @@ export default function App() {
         onClearCart={handleClearCart}
         user={user}
         language={language}
-        isOffline={isOfflineSimulated}
         onOrderSuccess={handleOrderSuccess}
       />
 
@@ -312,14 +289,14 @@ export default function App() {
         language={language}
       />
 
-      {/* Sophisticated Clean Footer (No fabricated mobile/phone or email fields) */}
+      {/* Sophisticated Clean Footer */}
       <footer className="border-t border-stone-200/80 bg-white/95 backdrop-blur-xs py-8 px-4 sm:px-6 lg:px-8 text-xs text-stone-500 relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
-            <XivaLogo layout="horizontal" size="sm" showSubtitle={false} />
+            <XivaLogo layout="horizontal" size="sm" showSubtitle={true} subtitleText={t.tagline} />
             <span className="hidden sm:inline text-stone-300">|</span>
             <span className="text-stone-600 font-medium">
-              Organic vegetables, fresh fruits, quality pulses, grains, and aromatic spices
+              {t.footerSubtitle}
             </span>
           </div>
 
@@ -329,72 +306,72 @@ export default function App() {
                 setCurrentCategory('all');
                 setCurrentView('store');
               }}
-              className="hover:text-emerald-800 transition-colors"
+              className="hover:text-emerald-800 transition-colors cursor-pointer"
             >
-              Home
+              {t.home}
             </button>
             <button
               onClick={() => {
                 setCurrentCategory('cereals');
                 setCurrentView('store');
               }}
-              className="hover:text-emerald-800 transition-colors"
+              className="hover:text-emerald-800 transition-colors cursor-pointer"
             >
-              Cereals
+              {t.cereals}
             </button>
             <button
               onClick={() => {
                 setCurrentCategory('pulses');
                 setCurrentView('store');
               }}
-              className="hover:text-emerald-800 transition-colors"
+              className="hover:text-emerald-800 transition-colors cursor-pointer"
             >
-              Pulses
+              {t.pulses}
             </button>
             <button
               onClick={() => {
                 setCurrentCategory('vegetables');
                 setCurrentView('store');
               }}
-              className="hover:text-emerald-800 transition-colors"
+              className="hover:text-emerald-800 transition-colors cursor-pointer"
             >
-              Vegetables
+              {t.vegetables}
             </button>
             <button
               onClick={() => {
                 setCurrentCategory('fruits');
                 setCurrentView('store');
               }}
-              className="hover:text-emerald-800 transition-colors"
+              className="hover:text-emerald-800 transition-colors cursor-pointer"
             >
-              Fruits
+              {t.fruits}
             </button>
             <button
               onClick={() => {
                 setCurrentCategory('spices');
                 setCurrentView('store');
               }}
-              className="hover:text-emerald-800 transition-colors"
+              className="hover:text-emerald-800 transition-colors cursor-pointer"
             >
-              Spices
+              {t.spices}
             </button>
             <button
               onClick={() => {
                 setCurrentCategory('exotic');
                 setCurrentView('store');
               }}
-              className="hover:text-emerald-800 transition-colors"
+              className="hover:text-emerald-800 transition-colors cursor-pointer"
             >
-              Exotic
+              {t.exotic}
             </button>
             <button
               onClick={() => setCurrentView('orders')}
-              className="hover:text-emerald-800 transition-colors"
+              className="hover:text-emerald-800 transition-colors cursor-pointer"
             >
-              Track Orders
+              {t.navOrders}
             </button>
             <span className="text-stone-300 hidden sm:inline">|</span>
-            <span className="text-emerald-800 font-bold">100% Direct Farmer Remittance</span>
+            <span className="text-emerald-800 font-bold">{t.footerDirect}</span>
           </div>
         </div>
       </footer>

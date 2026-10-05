@@ -18,14 +18,12 @@ import {
 const STORAGE_KEYS = {
   USER: 'xiva_user',
   ADMIN_AUTH: 'xiva_admin_authenticated',
-  PRODUCTS: 'xiva_products_v2', // bumped to ensure PDF crops load fresh
+  PRODUCTS: 'xiva_products_v3', // bumped so users immediately receive new attractive images
   FARMERS: 'xiva_farmers',
   REVIEWS: 'xiva_reviews',
   ORDERS: 'xiva_orders',
   WISHLIST: 'xiva_wishlist',
-  LANGUAGE: 'xiva_language',
-  OFFLINE_MODE: 'xiva_offline_mode',
-  OFFLINE_QUEUE: 'xiva_offline_queue'
+  LANGUAGE: 'xiva_language'
 };
 
 export class StorageService {
@@ -105,15 +103,6 @@ export class StorageService {
 
   static setLanguage(lang: LanguageCode): void {
     localStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);
-  }
-
-  // Offline Simulation
-  static getOfflineSimulated(): boolean {
-    return localStorage.getItem(STORAGE_KEYS.OFFLINE_MODE) === 'true';
-  }
-
-  static setOfflineSimulated(val: boolean): void {
-    localStorage.setItem(STORAGE_KEYS.OFFLINE_MODE, val ? 'true' : 'false');
   }
 
   // Products (Derived exclusively from PDF table)
@@ -306,7 +295,7 @@ export class StorageService {
     localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
   }
 
-  static createOrder(order: Order, isOffline = false): Order {
+  static createOrder(order: Order): Order {
     const orders = this.getOrders();
     orders.unshift(order);
     this.saveOrders(orders);
@@ -321,33 +310,6 @@ export class StorageService {
     });
     this.saveProducts(products);
 
-    if (isOffline) {
-      this.queueOfflineOrder(order);
-    }
-
     return order;
-  }
-
-  // Offline Order Queue
-  static getOfflineQueue(): Order[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.OFFLINE_QUEUE);
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return [];
-    }
-  }
-
-  static queueOfflineOrder(order: Order): void {
-    const q = this.getOfflineQueue();
-    q.push(order);
-    localStorage.setItem(STORAGE_KEYS.OFFLINE_QUEUE, JSON.stringify(q));
-  }
-
-  static clearOfflineQueue(): number {
-    const count = this.getOfflineQueue().length;
-    localStorage.removeItem(STORAGE_KEYS.OFFLINE_QUEUE);
-    return count;
   }
 }

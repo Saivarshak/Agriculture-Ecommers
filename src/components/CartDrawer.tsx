@@ -16,6 +16,7 @@ import {
 import { CartItem, DeliverySlot, PaymentMethod, User, LanguageCode, Order } from '../types';
 import { translations } from '../data/translations';
 import { StorageService } from '../services/storage';
+import { getProductLocalized } from '../data/productTranslations';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ interface CartDrawerProps {
   onClearCart: () => void;
   user: User;
   language: LanguageCode;
-  isOffline: boolean;
+  isOffline?: boolean;
   onOrderSuccess: (order: Order) => void;
 }
 
@@ -39,7 +40,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onClearCart,
   user,
   language,
-  isOffline,
+  isOffline = false,
   onOrderSuccess
 }) => {
   const t = translations[language];
@@ -167,11 +168,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="text-xs font-bold text-stone-900 truncate">
-                            {product.name}
+                            {getProductLocalized(product.id, product.name, product.category, language).name}
                           </h4>
                           <button
                             onClick={() => onRemoveItem(product.id)}
-                            className="text-stone-400 hover:text-rose-600 transition-colors p-0.5"
+                            className="text-stone-400 hover:text-rose-600 transition-colors p-0.5 cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

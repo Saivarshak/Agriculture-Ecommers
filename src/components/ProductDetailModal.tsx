@@ -16,6 +16,7 @@ import {
 import { Product, Review, User, LanguageCode } from '../types';
 import { translations } from '../data/translations';
 import { StorageService } from '../services/storage';
+import { getProductLocalized } from '../data/productTranslations';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -37,6 +38,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   if (!product) return null;
 
   const t = translations[language];
+  const loc = getProductLocalized(product.id, product.name, product.category, language, product.description, product.unit);
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState<Review[]>(() => {
     return StorageService.getReviews().filter((r) => r.productId === product.id);
@@ -195,10 +197,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="space-y-4">
               <div>
                 <span className="text-xs font-bold tracking-wider text-emerald-800 uppercase block mb-1">
-                  {product.category.replace('_', ' ')}
+                  {loc.categoryName}
                 </span>
                 <h2 className="text-2xl font-bold text-stone-900 font-serif-display leading-tight">
-                  {product.name}
+                  {loc.name}
                 </h2>
                 
                 {/* Rating summary */}
@@ -216,7 +218,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     ))}
                   </div>
                   <span className="text-sm font-bold text-stone-900 font-numeric">{product.rating}</span>
-                  <span className="text-xs text-stone-500 font-numeric">({product.reviewCount} customer reviews)</span>
+                  <span className="text-xs text-stone-500 font-numeric">({product.reviewCount} {t.reviews})</span>
                 </div>
               </div>
 
@@ -227,13 +229,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <span className="text-3xl font-bold text-emerald-950 font-numeric">
                       ₹{product.price}
                     </span>
-                    <span className="text-sm text-stone-600 font-medium"> / {product.unit}</span>
+                    <span className="text-sm text-stone-600 font-medium"> / {loc.unit}</span>
                   </div>
                   {product.mandiPriceBenchmark ? (
                     <div className="text-right">
                       <span className="text-xs text-stone-500 block">APMC Mandi Middleman Rate</span>
                       <span className="text-xs text-stone-400 line-through font-numeric">
-                        ₹{product.mandiPriceBenchmark} / {product.unit}
+                        ₹{product.mandiPriceBenchmark} / {loc.unit}
                       </span>
                     </div>
                   ) : null}
@@ -253,7 +255,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
                   Farm Story & Harvesting
                 </h4>
-                <p className="text-sm text-stone-600 leading-relaxed">{product.description}</p>
+                <p className="text-sm text-stone-600 leading-relaxed">{loc.description}</p>
               </div>
 
               {/* Nutritional Highlight */}

@@ -91,14 +91,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
+        {/* Header with Xiva.Org Logo */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-1">
-            <XivaLogo layout="vertical" size="md" showSubtitle={false} />
+            <XivaLogo layout="vertical" size="lg" showSubtitle={true} subtitleText="Direct Agriculture Platform" />
           </div>
-          <h3 className="text-xl font-bold text-stone-900 font-serif-display">
-            Direct Agriculture Authentication
-          </h3>
           <p className="text-xs text-stone-500">
             Secure login for local farmers, urban consumers, and admin verification officers.
           </p>

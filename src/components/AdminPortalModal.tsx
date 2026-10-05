@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Product, ProductCategory } from '../types';
 import { StorageService } from '../services/storage';
+import { XivaLogo } from './XivaLogo';
 
 interface AdminPortalModalProps {
   isOpen: boolean;
@@ -143,12 +144,9 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
         {!isAdmin ? (
           <div className="max-w-md mx-auto py-6 space-y-6">
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-xl bg-emerald-800 text-white flex items-center justify-center mx-auto shadow-md">
-                <ShieldCheck className="w-6 h-6" />
+              <div className="flex justify-center mb-1">
+                <XivaLogo layout="vertical" size="md" showSubtitle={true} subtitleText="Administrator Gateway" />
               </div>
-              <h3 className="text-xl font-bold text-stone-900 font-serif-display">
-                Protected Administrator Gateway
-              </h3>
               <p className="text-xs text-stone-500">
                 This area is restricted to authorized platform administrators. Please authenticate to manage products and store settings.
               </p>

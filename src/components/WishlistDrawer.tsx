@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Heart, Trash2, ShoppingBag } from 'lucide-react';
-import { Product } from '../types';
+import { Product, LanguageCode } from '../types';
+import { getProductLocalized } from '../data/productTranslations';
 
 interface WishlistDrawerProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface WishlistDrawerProps {
   onRemoveFromWishlist: (productId: string) => void;
   onAddToCart: (product: Product, quantity: number) => void;
   onSelectProduct: (product: Product) => void;
+  language?: LanguageCode;
 }
 
 export const WishlistDrawer: React.FC<WishlistDrawerProps> = ({
@@ -19,7 +21,8 @@ export const WishlistDrawer: React.FC<WishlistDrawerProps> = ({
   products,
   onRemoveFromWishlist,
   onAddToCart,
-  onSelectProduct
+  onSelectProduct,
+  language = 'en'
 }) => {
   if (!isOpen) return null;
 

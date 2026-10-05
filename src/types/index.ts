@@ -129,7 +129,6 @@ export interface Order {
   driverName?: string;
   driverPhone?: string;
   tempCelsius?: number;
-  isOfflineQueued?: boolean;
 }
 
 export type LanguageCode = 'en' | 'te' | 'hi' | 'ta' | 'mr' | 'pa';
