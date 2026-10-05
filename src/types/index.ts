@@ -5,10 +5,12 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
-  phone: string;
+  phone?: string;
   address?: string;
   farmId?: string;
 }
+
+export type ProductCategory = 'cereals' | 'pulses' | 'vegetables' | 'fruits' | 'spices' | 'exotic';
 
 export type VerificationStatus = 'pending' | 'verified' | 'rejected' | 'unsubmitted';
 
@@ -27,7 +29,7 @@ export interface FarmerProfile {
   id: string;
   farmerName: string;
   email: string;
-  phone: string;
+  phone?: string;
   farmName: string;
   village: string;
   district: string;
@@ -71,9 +73,9 @@ export interface Product {
   farmerVillage: string;
   farmerVerified: boolean;
   name: string;
-  category: 'vegetables' | 'fruits' | 'grains_pulses' | 'cold_pressed_oils' | 'dairy_honey' | 'spices';
+  category: ProductCategory;
   price: number;
-  unit: 'kg' | 'g' | 'liter' | 'bunch' | 'dozen';
+  unit: string;
   stock: number;
   harvestTime: string;
   harvestDate: string;
@@ -82,7 +84,7 @@ export interface Product {
   image: string;
   description: string;
   nutrition: string;
-  mandiPriceBenchmark: number; // APMC Mandi reference price
+  mandiPriceBenchmark?: number;
   rating: number;
   reviewCount: number;
   featured?: boolean;

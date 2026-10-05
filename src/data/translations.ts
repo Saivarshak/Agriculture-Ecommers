@@ -7,7 +7,6 @@ export interface TranslationStrings {
   navFarmerDashboard: string;
   navAdminVerification: string;
   navOrders: string;
-  navAwsCloud: string;
   login: string;
   logout: string;
   farmerBadge: string;
@@ -63,13 +62,12 @@ export interface TranslationStrings {
 
 export const translations: Record<LanguageCode, TranslationStrings> = {
   en: {
-    brandName: 'KisanSetu',
+    brandName: 'Xiva.Org',
     tagline: 'Direct Farm-to-Consumer Agriculture Platform',
     navMarketplace: 'Marketplace',
     navFarmerDashboard: 'Farmer Hub',
     navAdminVerification: 'Admin Desk',
     navOrders: 'Track Orders',
-    navAwsCloud: 'AWS Cloud Architecture',
     login: 'Sign In',
     logout: 'Sign Out',
     farmerBadge: 'Verified Farmer',
@@ -129,7 +127,6 @@ export const translations: Record<LanguageCode, TranslationStrings> = {
     navFarmerDashboard: 'రైతు కేంద్రం',
     navAdminVerification: 'ధృవీకరణ డెస్క్',
     navOrders: 'ఆర్డర్ ట్రాకింగ్',
-    navAwsCloud: 'AWS క్లౌడ్ సమాచారం',
     login: 'లాగిన్',
     logout: 'లాగౌట్',
     farmerBadge: 'ధృవీకరించబడిన రైతు',
@@ -189,7 +186,6 @@ export const translations: Record<LanguageCode, TranslationStrings> = {
     navFarmerDashboard: 'किसान डैशबोर्ड',
     navAdminVerification: 'सत्यापन अधिकारी',
     navOrders: 'ऑर्डर ट्रैकिंग',
-    navAwsCloud: 'AWS क्लाउड सिस्टम',
     login: 'लॉग इन करें',
     logout: 'लॉग आउट',
     farmerBadge: 'सत्यापित किसान',
@@ -249,7 +245,6 @@ export const translations: Record<LanguageCode, TranslationStrings> = {
     navFarmerDashboard: 'விவசாயி மையம்',
     navAdminVerification: 'சரிபார்ப்பு மேசை',
     navOrders: 'ஆர்டர் கண்காணிப்பு',
-    navAwsCloud: 'AWS கிளவுட் கட்டமைப்பு',
     login: 'உள்நுழைய',
     logout: 'வெளியேறு',
     farmerBadge: 'சரிபார்க்கப்பட்ட விவசாயி',
@@ -309,7 +304,6 @@ export const translations: Record<LanguageCode, TranslationStrings> = {
     navFarmerDashboard: 'शेतकरी डॅशबोर्ड',
     navAdminVerification: 'पडताळणी अधिकारी',
     navOrders: 'ऑर्डर ट्रॅकिंग',
-    navAwsCloud: 'AWS क्लाउड आर्किटेक्चर',
     login: 'लॉग इन',
     logout: 'लॉग आउट',
     farmerBadge: 'प्रमाणित शेतकरी',
@@ -369,7 +363,6 @@ export const translations: Record<LanguageCode, TranslationStrings> = {
     navFarmerDashboard: 'ਕਿਸਾਨ ਡੈਸ਼ਬੋਰਡ',
     navAdminVerification: 'ਤਸਦੀਕ ਡੈਸਕ',
     navOrders: 'ਆਰਡਰ ਟਰੈਕਿੰਗ',
-    navAwsCloud: 'AWS ਕਲਾਊਡ ਸਿਸਟਮ',
     login: 'ਲਾਗ ਇਨ',
     logout: 'ਲਾਗ ਆਊਟ',
     farmerBadge: 'ਪ੍ਰਮਾਣਿਤ ਕਿਸਾਨ',

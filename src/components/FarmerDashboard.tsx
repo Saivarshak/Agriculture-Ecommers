@@ -575,12 +575,12 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
                     onChange={(e) => setNewCategory(e.target.value as Product['category'])}
                     className="w-full text-xs p-2.5 rounded-lg border border-stone-300 bg-white"
                   >
-                    <option value="vegetables">Farm Vegetables</option>
-                    <option value="fruits">Orchard Fruits</option>
-                    <option value="grains_pulses">Grains & Pulses</option>
-                    <option value="cold_pressed_oils">Cold-Pressed Oils</option>
-                    <option value="dairy_honey">Dairy & Honey</option>
+                    <option value="cereals">Cereals</option>
+                    <option value="pulses">Pulses</option>
+                    <option value="vegetables">Vegetables</option>
+                    <option value="fruits">Fruits</option>
                     <option value="spices">Spices</option>
+                    <option value="exotic">Exotic</option>
                   </select>
                 </div>
 

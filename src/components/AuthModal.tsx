@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Lock, Mail, UserCheck, ShieldCheck, CheckCircle2, User as UserIcon } from 'lucide-react';
 import { User, UserRole, LanguageCode } from '../types';
 import { translations } from '../data/translations';
+import { XivaLogo } from './XivaLogo';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -92,8 +93,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-xl bg-emerald-800 text-white flex items-center justify-center mx-auto text-xl shadow-md">
-            🌱
+          <div className="flex justify-center mb-1">
+            <XivaLogo layout="vertical" size="md" showSubtitle={false} />
           </div>
           <h3 className="text-xl font-bold text-stone-900 font-serif-display">
             Direct Agriculture Authentication

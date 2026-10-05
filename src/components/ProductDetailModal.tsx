@@ -229,19 +229,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     </span>
                     <span className="text-sm text-stone-600 font-medium"> / {product.unit}</span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs text-stone-500 block">APMC Mandi Middleman Rate</span>
-                    <span className="text-xs text-stone-400 line-through font-numeric">
-                      ₹{product.mandiPriceBenchmark} / {product.unit}
+                  {product.mandiPriceBenchmark ? (
+                    <div className="text-right">
+                      <span className="text-xs text-stone-500 block">APMC Mandi Middleman Rate</span>
+                      <span className="text-xs text-stone-400 line-through font-numeric">
+                        ₹{product.mandiPriceBenchmark} / {product.unit}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+                {product.mandiPriceBenchmark ? (
+                  <div className="mt-2 text-xs text-emerald-800 flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>
+                      Farmer gains +{Math.round(((product.price - product.mandiPriceBenchmark) / product.mandiPriceBenchmark) * 100)}% higher direct realization!
                     </span>
                   </div>
-                </div>
-                <div className="mt-2 text-xs text-emerald-800 flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>
-                    Farmer gains +{Math.round(((product.price - product.mandiPriceBenchmark) / product.mandiPriceBenchmark) * 100)}% higher direct realization!
-                  </span>
-                </div>
+                ) : null}
               </div>
 
               {/* Description */}

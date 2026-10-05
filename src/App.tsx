@@ -3,33 +3,43 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TopBar } from './components/TopBar';
 import { Marketplace } from './components/Marketplace';
 import { FarmerDashboard } from './components/FarmerDashboard';
 import { AdminVerification } from './components/AdminVerification';
 import { OrderTracking } from './components/OrderTracking';
-import { AwsDeploymentView } from './components/AwsDeploymentView';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { CartDrawer } from './components/CartDrawer';
+import { WishlistDrawer } from './components/WishlistDrawer';
 import { AuthModal } from './components/AuthModal';
+import { AdminPortalModal } from './components/AdminPortalModal';
 import { LeafyBackground } from './components/LeafyBackground';
+import { XivaLogo } from './components/XivaLogo';
 import { StorageService } from './services/storage';
-import { User, Product, CartItem, Order, LanguageCode, FarmerProfile } from './types';
+import { User, Product, CartItem, Order, LanguageCode, FarmerProfile, ProductCategory } from './types';
 import { translations } from './data/translations';
-import { Wifi, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<'marketplace' | 'farmer' | 'admin' | 'orders' | 'aws'>('marketplace');
+  const [currentCategory, setCurrentCategory] = useState<ProductCategory | 'all'>('all');
+  const [currentView, setCurrentView] = useState<'store' | 'farmer' | 'admin_verification' | 'orders'>('store');
   const [user, setUser] = useState<User>(() => StorageService.getUser());
   const [language, setLanguage] = useState<LanguageCode>(() => StorageService.getLanguage());
   const [products, setProducts] = useState<Product[]>(() => StorageService.getProducts());
   const [farmers, setFarmers] = useState<FarmerProfile[]>(() => StorageService.getFarmers());
   const [orders, setOrders] = useState<Order[]>(() => StorageService.getOrders());
-  
-  // Cart state
+  const [wishlistIds, setWishlistIds] = useState<string[]>(() => StorageService.getWishlist());
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Admin Session State (Strictly protected behind authentication)
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => StorageService.isAdminAuthenticated());
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+
+  // Cart & Drawers
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
 
   // Modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -47,6 +57,7 @@ export default function App() {
     setFarmers(StorageService.getFarmers());
     setOrders(StorageService.getOrders());
     setUser(StorageService.getUser());
+    setWishlistIds(StorageService.getWishlist());
   };
 
   const handleLanguageChange = (lang: LanguageCode) => {
@@ -60,13 +71,18 @@ export default function App() {
     StorageService.setOfflineSimulated(nextState);
 
     if (!nextState) {
-      // Reconnected online: sync any queued offline orders
       const count = StorageService.clearOfflineQueue();
       if (count > 0) {
         setSyncNotice(`Reconnected online! ${count} offline farm orders synchronized with dispatch cloud.`);
         setTimeout(() => setSyncNotice(null), 5000);
       }
     }
+  };
+
+  // Wishlist toggle
+  const handleToggleWishlist = (productId: string) => {
+    StorageService.toggleWishlist(productId);
+    setWishlistIds(StorageService.getWishlist());
   };
 
   // Cart operations
@@ -103,6 +119,21 @@ export default function App() {
     setCart([]);
   };
 
+  // Admin session operations
+  const handleAdminLoginSuccess = () => {
+    setIsAdmin(true);
+    setIsAdminModalOpen(true);
+  };
+
+  const handleAdminLogout = () => {
+    StorageService.logoutAdmin();
+    setIsAdmin(false);
+    setIsAdminModalOpen(false);
+    if (currentView === 'admin_verification') {
+      setCurrentView('store');
+    }
+  };
+
   // Farmer operations
   const handleAddProduct = (newProduct: Product) => {
     StorageService.addProduct(newProduct);
@@ -116,8 +147,7 @@ export default function App() {
 
   const handleOrderSuccess = (order: Order) => {
     refreshData();
-    // Switch to tracking view so user immediately sees their live automated dispatch
-    setCurrentTab('orders');
+    setCurrentView('orders');
   };
 
   const currentFarmerProfile = farmers.find(
@@ -131,14 +161,30 @@ export default function App() {
       {/* Botanical Leafy Background Layer & Ambient Sunlight Animation */}
       <LeafyBackground />
 
-      {/* Top Bar with Strict 3-zone contract */}
+      {/* Top Bar (LOGO — Home - Cereals - Pulses - Vegetables - Fruits - Spices - Exotic - Search Box - Profile - Wishlist - Bag) */}
       <TopBar
-        currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        currentCategory={currentCategory}
+        onSelectCategory={(cat) => {
+          setCurrentCategory(cat);
+          setCurrentView('store');
+        }}
+        onGoHome={() => {
+          setCurrentCategory('all');
+          setCurrentView('store');
+        }}
         cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        wishlistCount={wishlistIds.length}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenWishlist={() => setIsWishlistOpen(true)}
         user={user}
+        isAdmin={isAdmin}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAdminLogin={() => setIsAdminModalOpen(true)}
+        onLogoutAdmin={handleAdminLogout}
+        onOpenAdminPortal={() => setIsAdminModalOpen(true)}
+        onOpenOrders={() => setCurrentView('orders')}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
         language={language}
         onSelectLanguage={handleLanguageChange}
         isOfflineSimulated={isOfflineSimulated}
@@ -148,7 +194,7 @@ export default function App() {
 
       {/* Online Sync Notification Toast */}
       {syncNotice && (
-        <div className="bg-emerald-800 text-white px-4 py-2.5 text-xs flex items-center justify-between shadow-md">
+        <div className="bg-emerald-800 text-white px-4 py-2.5 text-xs flex items-center justify-between shadow-md relative z-30">
           <div className="max-w-7xl mx-auto w-full flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-300" />
             <span className="font-semibold">{syncNotice}</span>
@@ -156,19 +202,23 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Tab Routing */}
+      {/* Main Content Area */}
       <main className="flex-1">
-        {currentTab === 'marketplace' && (
+        {currentView === 'store' && (
           <Marketplace
             products={products}
+            currentCategory={currentCategory}
+            onSelectCategory={setCurrentCategory}
             onSelectProduct={(p) => setSelectedProduct(p)}
             onAddToCart={handleAddToCart}
-            language={language}
-            onNavigateToFarmer={() => setCurrentTab('farmer')}
+            onToggleWishlist={handleToggleWishlist}
+            wishlistIds={wishlistIds}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
         )}
 
-        {currentTab === 'farmer' && (
+        {currentView === 'farmer' && (
           <FarmerDashboard
             user={user}
             farmer={currentFarmerProfile}
@@ -180,7 +230,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'admin' && (
+        {currentView === 'admin_verification' && isAdmin && (
           <AdminVerification
             user={user}
             farmers={farmers}
@@ -189,7 +239,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'orders' && (
+        {currentView === 'orders' && (
           <OrderTracking
             orders={orders}
             language={language}
@@ -198,10 +248,6 @@ export default function App() {
               if (p) setSelectedProduct(p);
             }}
           />
-        )}
-
-        {currentTab === 'aws' && (
-          <AwsDeploymentView language={language} />
         )}
       </main>
 
@@ -214,7 +260,7 @@ export default function App() {
         language={language}
         onOpenOrders={() => {
           setSelectedProduct(null);
-          setCurrentTab('orders');
+          setCurrentView('orders');
         }}
       />
 
@@ -232,7 +278,29 @@ export default function App() {
         onOrderSuccess={handleOrderSuccess}
       />
 
-      {/* Authentication Modal with saivarshak14@gmail.com / 1111 */}
+      {/* Wishlist Drawer */}
+      <WishlistDrawer
+        isOpen={isWishlistOpen}
+        onClose={() => setIsWishlistOpen(false)}
+        wishlistIds={wishlistIds}
+        products={products}
+        onRemoveFromWishlist={handleToggleWishlist}
+        onAddToCart={handleAddToCart}
+        onSelectProduct={(p) => setSelectedProduct(p)}
+      />
+
+      {/* Protected Admin Portal / Login Modal */}
+      <AdminPortalModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        isAdmin={isAdmin}
+        onLoginSuccess={handleAdminLoginSuccess}
+        onLogout={handleAdminLogout}
+        products={products}
+        onRefreshProducts={refreshData}
+      />
+
+      {/* Customer Authentication Modal */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
@@ -244,33 +312,89 @@ export default function App() {
         language={language}
       />
 
-      {/* Sophisticated Natural Agriculture Footer */}
-      <footer className="border-t border-stone-200/80 bg-white/90 backdrop-blur-xs py-8 px-4 sm:px-6 lg:px-8 text-xs text-stone-500 relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-center sm:text-left">
-            <span className="font-bold text-emerald-950 font-serif-display text-sm">Nutrify India Organics · {t.brandName}</span>
-            <span className="hidden sm:inline">·</span>
-            <span>+91 93400 74900 · office@nutrifyindiaorganics.in</span>
+      {/* Sophisticated Clean Footer (No fabricated mobile/phone or email fields) */}
+      <footer className="border-t border-stone-200/80 bg-white/95 backdrop-blur-xs py-8 px-4 sm:px-6 lg:px-8 text-xs text-stone-500 relative z-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
+            <XivaLogo layout="horizontal" size="sm" showSubtitle={false} />
+            <span className="hidden sm:inline text-stone-300">|</span>
+            <span className="text-stone-600 font-medium">
+              Organic vegetables, fresh fruits, quality pulses, grains, and aromatic spices
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-5 text-stone-600">
-            <button onClick={() => setCurrentTab('marketplace')} className="hover:text-emerald-800 transition-colors">
-              {t.navMarketplace}
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-stone-600 font-medium">
+            <button
+              onClick={() => {
+                setCurrentCategory('all');
+                setCurrentView('store');
+              }}
+              className="hover:text-emerald-800 transition-colors"
+            >
+              Home
             </button>
-            <button onClick={() => setCurrentTab('farmer')} className="hover:text-emerald-800 transition-colors">
-              {t.navFarmerDashboard}
+            <button
+              onClick={() => {
+                setCurrentCategory('cereals');
+                setCurrentView('store');
+              }}
+              className="hover:text-emerald-800 transition-colors"
+            >
+              Cereals
             </button>
-            <button onClick={() => setCurrentTab('admin')} className="hover:text-emerald-800 transition-colors">
-              {t.navAdminVerification}
+            <button
+              onClick={() => {
+                setCurrentCategory('pulses');
+                setCurrentView('store');
+              }}
+              className="hover:text-emerald-800 transition-colors"
+            >
+              Pulses
             </button>
-            <button onClick={() => setCurrentTab('orders')} className="hover:text-emerald-800 transition-colors">
-              {t.navOrders}
+            <button
+              onClick={() => {
+                setCurrentCategory('vegetables');
+                setCurrentView('store');
+              }}
+              className="hover:text-emerald-800 transition-colors"
+            >
+              Vegetables
             </button>
-            <button onClick={() => setCurrentTab('aws')} className="hover:text-emerald-800 transition-colors">
-              AWS Cloud & CI/CD
+            <button
+              onClick={() => {
+                setCurrentCategory('fruits');
+                setCurrentView('store');
+              }}
+              className="hover:text-emerald-800 transition-colors"
+            >
+              Fruits
             </button>
-            <span>·</span>
-            <span className="text-emerald-800 font-semibold">100% Direct Farmer Remittance</span>
+            <button
+              onClick={() => {
+                setCurrentCategory('spices');
+                setCurrentView('store');
+              }}
+              className="hover:text-emerald-800 transition-colors"
+            >
+              Spices
+            </button>
+            <button
+              onClick={() => {
+                setCurrentCategory('exotic');
+                setCurrentView('store');
+              }}
+              className="hover:text-emerald-800 transition-colors"
+            >
+              Exotic
+            </button>
+            <button
+              onClick={() => setCurrentView('orders')}
+              className="hover:text-emerald-800 transition-colors"
+            >
+              Track Orders
+            </button>
+            <span className="text-stone-300 hidden sm:inline">|</span>
+            <span className="text-emerald-800 font-bold">100% Direct Farmer Remittance</span>
           </div>
         </div>
       </footer>

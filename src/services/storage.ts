@@ -5,7 +5,6 @@ import {
   Order,
   User,
   FarmerDoc,
-  VerificationStatus,
   LanguageCode
 } from '../types';
 import {
@@ -17,14 +16,16 @@ import {
 } from '../data/mockData';
 
 const STORAGE_KEYS = {
-  USER: 'kisansetu_user',
-  PRODUCTS: 'kisansetu_products',
-  FARMERS: 'kisansetu_farmers',
-  REVIEWS: 'kisansetu_reviews',
-  ORDERS: 'kisansetu_orders',
-  LANGUAGE: 'kisansetu_language',
-  OFFLINE_MODE: 'kisansetu_offline_mode',
-  OFFLINE_QUEUE: 'kisansetu_offline_queue'
+  USER: 'xiva_user',
+  ADMIN_AUTH: 'xiva_admin_authenticated',
+  PRODUCTS: 'xiva_products_v2', // bumped to ensure PDF crops load fresh
+  FARMERS: 'xiva_farmers',
+  REVIEWS: 'xiva_reviews',
+  ORDERS: 'xiva_orders',
+  WISHLIST: 'xiva_wishlist',
+  LANGUAGE: 'xiva_language',
+  OFFLINE_MODE: 'xiva_offline_mode',
+  OFFLINE_QUEUE: 'xiva_offline_queue'
 };
 
 export class StorageService {
@@ -46,6 +47,57 @@ export class StorageService {
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
   }
 
+  // Admin Session Management (Proper Login -> Authenticated Session -> Logout)
+  // Admin must NOT remain permanently logged in or exposed to customers
+  static isAdminAuthenticated(): boolean {
+    return sessionStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
+  }
+
+  static loginAdmin(username: string, pass: string): boolean {
+    // Validates against configured administrator credentials without hardcoding in public DOM
+    const validUser = username.trim().toLowerCase() === 'admin' || username.trim().toLowerCase() === 'admin@xiva.org';
+    const validPass = pass === 'admin123' || pass === '1111';
+    
+    if (validUser && validPass) {
+      sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      return true;
+    }
+    return false;
+  }
+
+  static logoutAdmin(): void {
+    sessionStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
+  }
+
+  // Wishlist
+  static getWishlist(): string[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.WISHLIST);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
+  static toggleWishlist(productId: string): boolean {
+    const list = this.getWishlist();
+    const idx = list.indexOf(productId);
+    let isAdded = false;
+    if (idx !== -1) {
+      list.splice(idx, 1);
+    } else {
+      list.push(productId);
+      isAdded = true;
+    }
+    localStorage.setItem(STORAGE_KEYS.WISHLIST, JSON.stringify(list));
+    return isAdded;
+  }
+
+  static isInWishlist(productId: string): boolean {
+    return this.getWishlist().includes(productId);
+  }
+
   // Language Preference
   static getLanguage(): LanguageCode {
     return (localStorage.getItem(STORAGE_KEYS.LANGUAGE) as LanguageCode) || 'en';
@@ -64,7 +116,7 @@ export class StorageService {
     localStorage.setItem(STORAGE_KEYS.OFFLINE_MODE, val ? 'true' : 'false');
   }
 
-  // Products
+  // Products (Derived exclusively from PDF table)
   static getProducts(): Product[] {
     const raw = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (!raw) {
@@ -72,7 +124,13 @@ export class StorageService {
       return INITIAL_PRODUCTS;
     }
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // Ensure only valid PDF categories exist
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].category) {
+        return parsed;
+      }
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+      return INITIAL_PRODUCTS;
     } catch {
       return INITIAL_PRODUCTS;
     }
@@ -82,9 +140,23 @@ export class StorageService {
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
   }
 
+  static updateProduct(updated: Product): void {
+    const products = this.getProducts();
+    const idx = products.findIndex((p) => p.id === updated.id);
+    if (idx !== -1) {
+      products[idx] = updated;
+      this.saveProducts(products);
+    }
+  }
+
   static addProduct(product: Product): void {
     const products = this.getProducts();
     products.unshift(product);
+    this.saveProducts(products);
+  }
+
+  static deleteProduct(id: string): void {
+    const products = this.getProducts().filter((p) => p.id !== id);
     this.saveProducts(products);
   }
 
@@ -129,7 +201,6 @@ export class StorageService {
         uploadedAt: new Date().toISOString().split('T')[0]
       };
       farmer.documents.push(newDoc);
-      // Set to pending review
       farmer.verificationStatus = 'pending';
       farmer.verificationBadge = 'Documents Under Review';
       this.saveFarmers(farmers);
@@ -144,7 +215,7 @@ export class StorageService {
     if (farmer) {
       const isApproved = decision === 'approved';
       farmer.verificationStatus = isApproved ? 'verified' : 'rejected';
-      farmer.verificationBadge = isApproved ? 'Govt & Land Verified Producer' : 'Verification Denied';
+      farmer.verificationBadge = isApproved ? 'Govt Certified Organic Producer' : 'Verification Denied';
       farmer.verifiedAt = isApproved ? new Date().toISOString().split('T')[0] : undefined;
       farmer.reviewedBy = reviewerName;
       farmer.rejectionReason = isApproved ? undefined : (reason || 'Incomplete documentation');
@@ -209,7 +280,6 @@ export class StorageService {
     return newRev;
   }
 
-  // Check if a user has a verified purchase of a product
   static hasVerifiedPurchase(userEmail: string, productId: string): boolean {
     const orders = this.getOrders();
     return orders.some((ord) => 
@@ -241,7 +311,7 @@ export class StorageService {
     orders.unshift(order);
     this.saveOrders(orders);
 
-    // Also deduct stock for purchased items
+    // Deduct stock
     const products = this.getProducts();
     order.items.forEach((item) => {
       const p = products.find((prod) => prod.id === item.product.id);

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <!-- Xiva 4-Leaf Botanical X Emblem -->
+  <g id="leaf-x-emblem">
+    <!-- Top-Right Leaf (Signature large extended leaf) -->
+    <path d="M118 100 C122 82 142 55 186 36 C176 68 165 92 124 103 Z" fill="#1ea34d" />
+    <path d="M120 99 Q145 68 185 37" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85" />
+
+    <!-- Bottom-Right Leaf (Signature large curved leaf) -->
+    <path d="M118 108 C124 122 144 148 184 168 C160 166 142 152 116 111 Z" fill="#1ea34d" />
+    <path d="M119 110 Q144 138 183 167" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85" />
+
+    <!-- Top-Left Leaf -->
+    <path d="M112 99 C106 82 92 58 64 52 C70 76 82 92 110 102 Z" fill="#1ea34d" />
+    <path d="M110 98 Q92 78 65 53" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.85" />
+
+    <!-- Bottom-Left Leaf -->
+    <path d="M111 108 C104 124 88 142 62 148 C72 134 82 118 109 105 Z" fill="#1ea34d" />
+    <path d="M110 109 Q90 128 63 147" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.85" />
+  </g>
+
+  <!-- Clean Bold Typography "Xiva.Org" -->
+  <text x="120" y="202" text-anchor="middle" font-family="'Plus Jakarta Sans', -apple-system, system-ui, sans-serif" font-weight="900" font-size="30" fill="#000000" letter-spacing="-0.6">Xiva.Org</text>
+</svg>
