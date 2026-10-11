@@ -1,4 +1,4 @@
-import { FarmerProfile, Product, Review, Order, User } from '../types';
+import { FarmerProfile, Product, Review, Order, User, AdCard, SiteStructureConfig } from '../types';
 
 export const DEFAULT_USER: User = {
   id: 'usr_varshak',
@@ -1267,3 +1267,79 @@ export const INITIAL_ORDERS: Order[] = [
     tempCelsius: 3.8
   }
 ];
+
+export const INITIAL_ADS: AdCard[] = [
+  {
+    id: 'ad_monsoon_sale',
+    title: 'Monsoon Organic Harvest Sale',
+    subtitle: 'Direct farm gate dispatch from 18 verified Mandya & Nilgiris eco-orchards. Zero middlemen commission.',
+    badge: 'SPECIAL AD · LIMITED DEAL',
+    discountText: 'FLAT 30% OFF',
+    code: 'ORGANIC30',
+    ctaText: 'Claim Harvest Deal',
+    ctaCategory: 'fruits',
+    image: '/src/assets/images/hero_farm_produce_spread_1791160693688.jpg',
+    bgColor: 'emerald',
+    active: true,
+    priority: 1,
+    placement: 'hero_spotlight'
+  },
+  {
+    id: 'ad_wood_pressed_oil',
+    title: 'Traditional Wood-Pressed Chekku Oils',
+    subtitle: '100% Raw Unfiltered Mustard, Groundnut & Sesame Oils. Cold extraction retaining natural antioxidant lignans.',
+    badge: 'SPONSORED PRODUCER',
+    discountText: 'BUY 2 GET ₹100 OFF',
+    code: 'PUREOIL100',
+    ctaText: 'Shop Artisanal Oils',
+    ctaCategory: 'exotic',
+    image: '/src/assets/images/product_farm_coldpressed_oil_1791021836230.jpg',
+    bgColor: 'amber',
+    active: true,
+    priority: 2,
+    placement: 'catalog_interstitial'
+  },
+  {
+    id: 'ad_wayanad_spices',
+    title: 'Single-Origin Malabar Heritage Spices',
+    subtitle: 'Hand-harvested Wayanad Black Pepper, Tellicherry peppercorns & Salem golden curcumin turmeric roots.',
+    badge: 'FARM SPOTLIGHT',
+    discountText: 'FREE EXPRESS SHIPPING',
+    code: 'FREESHIP',
+    ctaText: 'Explore Spices',
+    ctaCategory: 'spices',
+    image: '/src/assets/images/product_heritage_spices_1791169443477.jpg',
+    bgColor: 'stone',
+    active: true,
+    priority: 3,
+    placement: 'catalog_interstitial'
+  }
+];
+
+export const INITIAL_SITE_STRUCTURE: SiteStructureConfig = {
+  heroBadge: 'NPOP & APEDA CERTIFIED DIRECT AGRICULTURAL NETWORK',
+  heroTitle: 'Direct from Verified Organic Farms',
+  heroSubtitle: 'Fresh Harvests at Fair Mandi Rates',
+  heroDescription: 'Connecting rural agricultural growers directly with urban households. 100% traceable harvests, zero predatory commission, and temperature-controlled doorstep delivery.',
+  heroBgImage: '/src/assets/images/hero_organic_farm_fresh_1791021810264.jpg',
+  heroCtaExploreText: 'Explore Fresh Crops',
+  heroCtaFarmerText: 'Farmer Producer Desk',
+  mandiTickerEnabled: true,
+  mandiTickerTitle: 'Live APMC Mandi Benchmark',
+  mandiTickerDesc: 'Direct farm gate realisation vs conventional retail middlemen spread',
+  mandiTickerItems: [
+    { id: 'm1', name: 'Sona Masoori Paddy', price: '₹2,850/qtl (+₹180 farmer gain)', trend: 'up' },
+    { id: 'm2', name: 'Heirloom Country Tomato', price: '₹32/kg (farm gate direct)', trend: 'stable' },
+    { id: 'm3', name: 'Ratnagiri Alphonso Mango', price: '₹180/kg (100% naturally tree-ripened)', trend: 'up' },
+    { id: 'm4', name: 'Salem Lakadong Turmeric', price: '₹145/kg (High Curcumin)', trend: 'up' }
+  ],
+  trustStats: [
+    { id: 's1', value: '0%', label: 'Middlemen Commission' },
+    { id: 's2', value: '100%', label: 'Direct Producer Pay' },
+    { id: 's3', value: '24h', label: 'Farm-Gate to Door' },
+    { id: 's4', value: 'Govt', label: 'Verified Bio-Cert' }
+  ],
+  topAnnouncementNotice: 'Zero Middlemen · 100% Direct Farmer Compensation · Fast Cold-Chain Doorstep Delivery',
+  topAnnouncementEnabled: true
+};
+

@@ -11,7 +11,7 @@ import {
   X,
   ChevronDown
 } from 'lucide-react';
-import { User, LanguageCode, ProductCategory } from '../types';
+import { User, LanguageCode, ProductCategory, SiteStructureConfig } from '../types';
 import { translations } from '../data/translations';
 import { XivaLogo } from './XivaLogo';
 
@@ -34,6 +34,7 @@ export interface TopBarProps {
   onSelectLanguage: (lang: LanguageCode) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  siteStructure?: SiteStructureConfig;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -54,7 +55,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   language,
   onSelectLanguage,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  siteStructure
 }) => {
   const t = translations[language];
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -62,41 +64,51 @@ export const TopBar: React.FC<TopBarProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md shadow-xs border-b border-stone-200">
       {/* 1. Top Green Utility Header */}
-      <div className="bg-[#064e3b] text-white text-[10px] sm:text-[11px] py-1.5 px-3 sm:px-6 lg:px-8 border-b border-[#065f46]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2.5">
-          {/* Left: Brand Trust Statement */}
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-white tracking-wide flex items-center gap-1">
-              <XivaLogo layout="emblem" size="xs" />
-              <span className="text-xs">Xiva.Org</span>
-            </span>
-            <span className="text-emerald-500">·</span>
-            <span className="text-emerald-200 text-[10px] hidden sm:inline">
-              {t.topTrustBar}
-            </span>
-          </div>
+      {(siteStructure?.topAnnouncementEnabled ?? true) && (
+        <div className="bg-[#064e3b] text-white text-[10px] sm:text-[11px] py-1.5 px-3 sm:px-6 lg:px-8 border-b border-[#065f46]">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2.5">
+            {/* Left: Brand Trust Statement */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-white tracking-wide flex items-center gap-1">
+                <XivaLogo layout="emblem" size="xs" />
+                <span className="text-xs">Xiva.Org</span>
+              </span>
+              <span className="text-emerald-500">·</span>
+              <span className="text-emerald-200 text-[10px] hidden sm:inline">
+                {siteStructure?.topAnnouncementNotice || t.topTrustBar}
+              </span>
+            </div>
 
-          {/* Right: Language Switcher */}
-          <div className="flex items-center gap-2">
-            <div className="relative inline-block text-left">
-              <select
-                value={language}
-                onChange={(e) => onSelectLanguage(e.target.value as LanguageCode)}
-                aria-label="Select Language"
-                className="appearance-none bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100 border border-emerald-700 rounded px-2 py-0.5 pr-5 text-[10px] font-medium cursor-pointer focus:outline-none"
+            {/* Right: Quick Admin Access & Language Switcher */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onSelectTab('admin')}
+                className="hidden md:inline-flex items-center gap-1 text-[10px] text-emerald-300 hover:text-white transition-colors cursor-pointer font-mono"
               >
-                <option value="en">English (EN)</option>
-                <option value="te">తెలుగు (TE)</option>
-                <option value="hi">हिन्दी (HI)</option>
-                <option value="ta">தமிழ் (TA)</option>
-                <option value="mr">मराठी (MR)</option>
-                <option value="pa">ਪੰਜਾਬੀ (PA)</option>
-              </select>
-              <Globe className="w-2.5 h-2.5 text-emerald-400 absolute right-1.5 top-1.5 pointer-events-none" />
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <span>/admin Portal</span>
+              </button>
+
+              <div className="relative inline-block text-left">
+                <select
+                  value={language}
+                  onChange={(e) => onSelectLanguage(e.target.value as LanguageCode)}
+                  aria-label="Select Language"
+                  className="appearance-none bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100 border border-emerald-700 rounded px-2 py-0.5 pr-5 text-[10px] font-medium cursor-pointer focus:outline-none"
+                >
+                  <option value="en">English (EN)</option>
+                  <option value="te">తెలుగు (TE)</option>
+                  <option value="hi">हिन्दी (HI)</option>
+                  <option value="ta">தமிழ் (TA)</option>
+                  <option value="mr">मराठी (MR)</option>
+                  <option value="pa">ਪੰਜਾਬੀ (PA)</option>
+                </select>
+                <Globe className="w-2.5 h-2.5 text-emerald-400 absolute right-1.5 top-1.5 pointer-events-none" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 2. Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-3 sm:gap-4">
@@ -137,19 +149,22 @@ export const TopBar: React.FC<TopBarProps> = ({
           >
             {t.navFarmerDashboard}
           </button>
-          {isAdmin && (
-            <button
-              onClick={() => onSelectTab('admin')}
-              className={`transition-colors hover:text-emerald-800 py-1 border-b-2 text-xs flex items-center gap-1 ${
-                currentTab === 'admin'
-                  ? 'text-emerald-800 font-bold border-emerald-700'
-                  : 'border-transparent text-stone-600'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-              <span>{t.navAdminVerification}</span>
-            </button>
-          )}
+          <button
+            onClick={() => onSelectTab('admin')}
+            className={`transition-colors hover:text-emerald-800 py-1 border-b-2 text-xs flex items-center gap-1 cursor-pointer ${
+              currentTab === 'admin'
+                ? 'text-emerald-800 font-bold border-emerald-700'
+                : 'border-transparent text-stone-600'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Admin (/admin)</span>
+            {isAdmin && (
+              <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.2 rounded-full">
+                Active
+              </span>
+            )}
+          </button>
           <button
             onClick={() => onSelectTab('orders')}
             className={`transition-colors hover:text-emerald-800 py-1 border-b-2 text-xs ${

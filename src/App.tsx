@@ -3,6 +3,7 @@ import { TopBar } from './components/TopBar';
 import { Marketplace } from './components/Marketplace';
 import { FarmerDashboard } from './components/FarmerDashboard';
 import { AdminVerification } from './components/AdminVerification';
+import { AdminStudio } from './components/AdminStudio';
 import { OrderTracking } from './components/OrderTracking';
 import { AuthModal } from './components/AuthModal';
 import { AdminPortalModal } from './components/AdminPortalModal';
@@ -20,7 +21,9 @@ import {
   Order,
   CartItem,
   LanguageCode,
-  User
+  User,
+  AdCard,
+  SiteStructureConfig
 } from './types';
 import { ShieldCheck, Heart, Sparkles, CheckCircle2 } from 'lucide-react';
 
@@ -35,10 +38,27 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>(() => StorageService.getProducts());
   const [farmers, setFarmers] = useState<FarmerProfile[]>(() => StorageService.getFarmers());
   const [orders, setOrders] = useState<Order[]>(() => StorageService.getOrders());
+  const [ads, setAds] = useState<AdCard[]>(() => StorageService.getAds());
+  const [siteStructure, setSiteStructure] = useState<SiteStructureConfig>(() => StorageService.getSiteStructure());
 
   // User & Admin session state (user is null if not explicitly logged in)
   const [user, setUser] = useState<User | null>(() => StorageService.getUser());
   const [isAdmin, setIsAdmin] = useState<boolean>(() => StorageService.isAdminAuthenticated());
+
+  // Listen to /admin URL navigation directly
+  useEffect(() => {
+    const handleUrlRoute = () => {
+      const pathname = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (pathname === '/admin' || pathname.startsWith('/admin') || hash === '#admin') {
+        setCurrentTab('admin');
+      }
+    };
+
+    handleUrlRoute();
+    window.addEventListener('popstate', handleUrlRoute);
+    return () => window.removeEventListener('popstate', handleUrlRoute);
+  }, []);
 
   // Cart & Wishlist state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -64,15 +84,22 @@ export default function App() {
     setProducts(StorageService.getProducts());
     setFarmers(StorageService.getFarmers());
     setOrders(StorageService.getOrders());
+    setAds(StorageService.getAds());
+    setSiteStructure(StorageService.getSiteStructure());
   };
 
-  // Handle Tab navigation
+  // Handle Tab navigation with browser history sync
   const handleSelectTab = (tab: 'marketplace' | 'farmer' | 'admin' | 'orders') => {
-    if (tab === 'admin' && !isAdmin) {
-      setIsAdminPortalOpen(true);
-      return;
-    }
     setCurrentTab(tab);
+    if (tab === 'admin') {
+      if (window.location.pathname !== '/admin') {
+        window.history.pushState(null, '', '/admin');
+      }
+    } else {
+      if (window.location.pathname === '/admin') {
+        window.history.pushState(null, '', '/');
+      }
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -202,13 +229,14 @@ export default function App() {
         user={user}
         isAdmin={isAdmin}
         onOpenAuth={() => setIsAuthModalOpen(true)}
-        onOpenAdminLogin={() => setIsAdminPortalOpen(true)}
+        onOpenAdminLogin={() => handleSelectTab('admin')}
         onLogoutAdmin={handleLogoutAdmin}
         onLogoutUser={handleLogoutUser}
         language={language}
         onSelectLanguage={handleSelectLanguage}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        siteStructure={siteStructure}
       />
 
       {/* Primary Main Content View */}
@@ -216,6 +244,8 @@ export default function App() {
         {currentTab === 'marketplace' && (
           <Marketplace
             products={products}
+            ads={ads}
+            siteStructure={siteStructure}
             currentCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
             onSelectProduct={(prod) => setSelectedProduct(prod)}
@@ -242,10 +272,16 @@ export default function App() {
         )}
 
         {currentTab === 'admin' && (
-          <AdminVerification
-            user={user}
+          <AdminStudio
+            isAdmin={isAdmin}
+            onLoginSuccess={handleAdminLoginSuccess}
+            onLogout={handleLogoutAdmin}
+            products={products}
+            ads={ads}
+            siteStructure={siteStructure}
             farmers={farmers}
             onRefreshData={handleRefreshData}
+            onNavigateHome={() => handleSelectTab('marketplace')}
             language={language}
           />
         )}
@@ -319,11 +355,11 @@ export default function App() {
               <ul className="space-y-2 text-xs text-emerald-200">
                 <li>
                   <button
-                    onClick={() => setIsAdminPortalOpen(true)}
+                    onClick={() => handleSelectTab('admin')}
                     className="flex items-center gap-1.5 text-emerald-300 hover:text-white transition-colors cursor-pointer"
                   >
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{t.adminPortalTitle}</span>
+                    <span>{t.adminPortalTitle} (/admin)</span>
                   </button>
                 </li>
                 <li className="text-[11px] text-emerald-300/80">

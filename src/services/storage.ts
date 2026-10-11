@@ -5,14 +5,18 @@ import {
   Order,
   User,
   FarmerDoc,
-  LanguageCode
+  LanguageCode,
+  AdCard,
+  SiteStructureConfig
 } from '../types';
 import {
   DEFAULT_USER,
   INITIAL_FARMERS,
   INITIAL_PRODUCTS,
   INITIAL_REVIEWS,
-  INITIAL_ORDERS
+  INITIAL_ORDERS,
+  INITIAL_ADS,
+  INITIAL_SITE_STRUCTURE
 } from '../data/mockData';
 
 const STORAGE_KEYS = {
@@ -23,7 +27,9 @@ const STORAGE_KEYS = {
   REVIEWS: 'xiva_reviews',
   ORDERS: 'xiva_orders',
   WISHLIST: 'xiva_wishlist',
-  LANGUAGE: 'xiva_language'
+  LANGUAGE: 'xiva_language',
+  ADS: 'xiva_ads_v2',
+  SITE_STRUCTURE: 'xiva_site_structure_v2'
 };
 
 export class StorageService {
@@ -53,18 +59,23 @@ export class StorageService {
   }
 
   // Admin Session Management (Proper Login -> Authenticated Session -> Logout)
-  // Admin must NOT remain permanently logged in or exposed to customers
   static isAdminAuthenticated(): boolean {
-    return sessionStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
+    return (
+      sessionStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true' ||
+      localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true'
+    );
   }
 
-  static loginAdmin(username: string, pass: string): boolean {
+  static loginAdmin(username: string, pass: string, keepLoggedIn = true): boolean {
     const u = username.trim().toLowerCase();
     const validUser = u === 'saivarshak14@gmail.com' || u === 'admin' || u === 'admin@xiva.org';
     const validPass = pass === '1111' || pass === 'admin123';
     
     if (validUser && validPass) {
       sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      if (keepLoggedIn) {
+        localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
+      }
       return true;
     }
     return false;
@@ -72,6 +83,7 @@ export class StorageService {
 
   static logoutAdmin(): void {
     sessionStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
+    localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
   }
 
   // Wishlist
@@ -334,4 +346,84 @@ export class StorageService {
 
     return order;
   }
+
+  // Ad Cards & Promotional Banners Management
+  static getAds(): AdCard[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.ADS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.ADS, JSON.stringify(INITIAL_ADS));
+      return INITIAL_ADS;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+      return INITIAL_ADS;
+    } catch {
+      return INITIAL_ADS;
+    }
+  }
+
+  static saveAds(ads: AdCard[]): void {
+    localStorage.setItem(STORAGE_KEYS.ADS, JSON.stringify(ads));
+  }
+
+  static addAd(ad: AdCard): void {
+    const ads = this.getAds();
+    ads.unshift(ad);
+    this.saveAds(ads);
+  }
+
+  static updateAd(updated: AdCard): void {
+    const ads = this.getAds();
+    const idx = ads.findIndex((a) => a.id === updated.id);
+    if (idx !== -1) {
+      ads[idx] = updated;
+      this.saveAds(ads);
+    }
+  }
+
+  static deleteAd(id: string): void {
+    const ads = this.getAds().filter((a) => a.id !== id);
+    this.saveAds(ads);
+  }
+
+  // Web Structure & Hero Configuration
+  static getSiteStructure(): SiteStructureConfig {
+    const raw = localStorage.getItem(STORAGE_KEYS.SITE_STRUCTURE);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.SITE_STRUCTURE, JSON.stringify(INITIAL_SITE_STRUCTURE));
+      return INITIAL_SITE_STRUCTURE;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.heroTitle) {
+        return parsed;
+      }
+      return INITIAL_SITE_STRUCTURE;
+    } catch {
+      return INITIAL_SITE_STRUCTURE;
+    }
+  }
+
+  static saveSiteStructure(config: SiteStructureConfig): void {
+    localStorage.setItem(STORAGE_KEYS.SITE_STRUCTURE, JSON.stringify(config));
+  }
+
+  static resetSiteStructure(): SiteStructureConfig {
+    localStorage.setItem(STORAGE_KEYS.SITE_STRUCTURE, JSON.stringify(INITIAL_SITE_STRUCTURE));
+    return INITIAL_SITE_STRUCTURE;
+  }
+
+  static resetProductsToDefaults(): Product[] {
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+    return INITIAL_PRODUCTS;
+  }
+
+  static resetAdsToDefaults(): AdCard[] {
+    localStorage.setItem(STORAGE_KEYS.ADS, JSON.stringify(INITIAL_ADS));
+    return INITIAL_ADS;
+  }
 }
+

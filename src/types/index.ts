@@ -132,3 +132,49 @@ export interface Order {
 }
 
 export type LanguageCode = 'en' | 'te' | 'hi' | 'ta' | 'mr' | 'pa';
+
+export interface AdCard {
+  id: string;
+  title: string;
+  subtitle: string;
+  badge: string; // e.g. "SPECIAL AD", "SPONSORED", "SEASONAL OFFER"
+  discountText?: string; // e.g. "FLAT 30% OFF"
+  code?: string; // e.g. "HARVEST30"
+  ctaText: string;
+  ctaCategory?: ProductCategory | 'all';
+  image: string;
+  bgColor?: 'emerald' | 'amber' | 'rose' | 'indigo' | 'stone' | 'teal';
+  active: boolean;
+  priority?: number;
+  placement: 'hero_spotlight' | 'catalog_interstitial' | 'banner';
+}
+
+export interface MandiTickerItem {
+  id: string;
+  name: string;
+  price: string;
+  trend: 'up' | 'down' | 'stable';
+}
+
+export interface TrustStatItem {
+  id: string;
+  value: string;
+  label: string;
+}
+
+export interface SiteStructureConfig {
+  heroBadge: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroDescription: string;
+  heroBgImage: string;
+  heroCtaExploreText: string;
+  heroCtaFarmerText: string;
+  mandiTickerEnabled: boolean;
+  mandiTickerTitle: string;
+  mandiTickerDesc: string;
+  mandiTickerItems: MandiTickerItem[];
+  trustStats: TrustStatItem[];
+  topAnnouncementNotice: string;
+  topAnnouncementEnabled: boolean;
+}
