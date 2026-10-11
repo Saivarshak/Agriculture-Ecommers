@@ -12,8 +12,9 @@ import {
   AlertCircle,
   Edit2
 } from 'lucide-react';
-import { Product, ProductCategory } from '../types';
+import { Product, ProductCategory, LanguageCode } from '../types';
 import { StorageService } from '../services/storage';
+import { translations } from '../data/translations';
 import { XivaLogo } from './XivaLogo';
 
 interface AdminPortalModalProps {
@@ -24,6 +25,7 @@ interface AdminPortalModalProps {
   onLogout: () => void;
   products: Product[];
   onRefreshProducts: () => void;
+  language?: LanguageCode;
 }
 
 export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
@@ -33,11 +35,14 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
   onLoginSuccess,
   onLogout,
   products,
-  onRefreshProducts
+  onRefreshProducts,
+  language = 'en'
 }) => {
-  // Login form state
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const t = translations[language];
+
+  // Login form state - pre-filled with admin credentials
+  const [username, setUsername] = useState('saivarshak14@gmail.com');
+  const [password, setPassword] = useState('1111');
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Product management state
@@ -188,18 +193,35 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="1111"
                     className="w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border border-stone-300 focus:ring-1 focus:ring-emerald-700 font-mono"
                   />
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-2.5 rounded-xl transition-colors shadow-sm text-xs cursor-pointer"
-              >
-                Authenticate & Access Dashboard
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="submit"
+                  className="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-2.5 rounded-xl transition-colors shadow-sm text-xs cursor-pointer"
+                >
+                  {t.adminLoginBtn}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername('saivarshak14@gmail.com');
+                    setPassword('1111');
+                    const success = StorageService.loginAdmin('saivarshak14@gmail.com', '1111');
+                    if (success) {
+                      onLoginSuccess();
+                    }
+                  }}
+                  className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold py-2 rounded-xl text-xs transition-colors cursor-pointer border border-stone-200"
+                >
+                  {t.quickDemoAccess} (saivarshak14@gmail.com / 1111)
+                </button>
+              </div>
             </form>
           </div>
         ) : (

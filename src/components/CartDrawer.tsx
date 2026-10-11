@@ -25,9 +25,8 @@ interface CartDrawerProps {
   onUpdateQuantity: (productId: string, qty: number) => void;
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
-  user: User;
+  user: User | null;
   language: LanguageCode;
-  isOffline?: boolean;
   onOrderSuccess: (order: Order) => void;
 }
 
@@ -40,7 +39,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onClearCart,
   user,
   language,
-  isOffline = false,
   onOrderSuccess
 }) => {
   const t = translations[language];
@@ -52,9 +50,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split('T')[0];
   });
-  const [fullName, setFullName] = useState(user.name);
-  const [phone, setPhone] = useState(user.phone || '+91 98480 22334');
-  const [address, setAddress] = useState(user.address || 'Flat 402, Kaveri Heights, Madhapur, Hyderabad');
+  const [fullName, setFullName] = useState(user?.name || 'Sai Varshak');
+  const [phone, setPhone] = useState(user?.phone || '+91 98480 22334');
+  const [address, setAddress] = useState(user?.address || 'Flat 402, Kaveri Heights, Madhapur, Hyderabad');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
   const [upiIdInput, setUpiIdInput] = useState('saivarshak14@oksbi');
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
@@ -71,8 +69,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
     const newOrder: Order = {
       id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      consumerEmail: user.email,
-      consumerName: fullName,
+      consumerEmail: user?.email || 'customer@xiva.org',
+      consumerName: fullName || 'Customer',
       items: [...items],
       subtotal,
       deliveryFee,
@@ -98,11 +96,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       currentLocationDesc: 'Farm Harvest Batch Assigned to Farmer Gate',
       driverName: 'Ramesh Reddy (Cold Transport)',
       driverPhone: '+91 98851 44321',
-      tempCelsius: 4.0,
-      isOfflineQueued: isOffline
+      tempCelsius: 4.0
     };
 
-    StorageService.createOrder(newOrder, isOffline);
+    StorageService.createOrder(newOrder);
     setPlacedOrder(newOrder);
     setStep('success');
     onClearCart();
@@ -117,17 +114,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <div>
             <h3 className="text-base font-bold text-stone-900 font-serif-display">
               {step === 'cart'
-                ? `Harvest Basket (${items.length} crops)`
+                ? `${t.harvestBasket} (${items.length} ${t.crops})`
                 : step === 'checkout'
-                ? 'Automated Delivery & Schedule'
-                : 'Order Confirmed!'}
+                ? t.automatedDeliverySchedule
+                : t.orderConfirmed}
             </h3>
             <p className="text-xs text-stone-500">
               {step === 'cart'
-                ? 'Direct farm gate origin · Zero intermediaries'
+                ? t.farmGateOrigin
                 : step === 'checkout'
-                ? 'Automated cold-chain scheduling'
-                : '100% value booked for rural farmers'}
+                ? t.deliverySlots
+                : t.orderConfirmedDesc}
             </p>
           </div>
           <button
@@ -147,9 +144,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto">
                     🌱
                   </div>
-                  <h4 className="text-sm font-semibold text-stone-800">Your harvest basket is empty</h4>
+                  <h4 className="text-sm font-semibold text-stone-800">{t.emptyCart}</h4>
                   <p className="text-xs text-stone-500 max-w-xs mx-auto">
-                    Explore freshly harvested crops directly from local verified farmers.
+                    {t.emptyCartDesc}
                   </p>
                 </div>
               ) : (
@@ -178,7 +175,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           </button>
                         </div>
                         <p className="text-[11px] text-stone-500 truncate">
-                          Farmer: {product.farmerName} ({product.farmerVillage})
+                          {product.farmerName} ({product.farmerVillage})
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center border border-stone-300 rounded bg-white text-xs">
@@ -208,10 +205,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 space-y-1">
                     <div className="font-semibold flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                      <span>Direct Farmer Remittance</span>
+                      <span>{t.directFarmerRemittance}</span>
                     </div>
                     <p className="text-[11px] text-emerald-800 leading-normal">
-                      Full subtotal of ₹{subtotal} will be wired directly via Aadhaar/UPI to the farmer's account. Zero platform cut.
+                      {t.directRemittanceDesc}
                     </p>
                   </div>
                 </div>
@@ -247,11 +244,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <div>
                         <span className="block font-bold">{t.earlyMorningSlot}</span>
                         <span className="text-[11px] text-stone-500 font-normal">
-                          Plucked at 4:30 AM · Delivered cold at 7:00 AM
+                          {t.earlyMorningSlotDesc}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[11px] text-emerald-800 font-bold">Recommended</span>
+                    <span className="text-[11px] text-emerald-800 font-bold">{t.recommended}</span>
                   </label>
 
                   <label
@@ -272,7 +269,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <div>
                         <span className="block font-bold">{t.eveningSlot}</span>
                         <span className="text-[11px] text-stone-500 font-normal">
-                          Midday harvest · Doorstep delivery before dinner
+                          {t.eveningSlotDesc}
                         </span>
                       </div>
                     </div>
@@ -296,7 +293,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <div>
                         <span className="block font-bold">{t.weekendSlot}</span>
                         <span className="text-[11px] text-stone-500 font-normal">
-                          Apartment community collective drop · Zero carbon
+                          {t.weekendSlotDesc}
                         </span>
                       </div>
                     </div>
@@ -307,7 +304,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {/* Delivery Address */}
               <div className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block">
-                  Delivery Destination
+                  {t.deliveryDestination}
                 </label>
                 <div className="space-y-2">
                   <input
@@ -315,7 +312,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Recipient Full Name"
+                    placeholder={t.recipientName}
                     className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-1 focus:ring-emerald-700"
                   />
                   <input
@@ -323,7 +320,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Mobile Number (for SMS & Driver Dispatch)"
+                    placeholder={t.mobileNumber}
                     className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-1 focus:ring-emerald-700"
                   />
                   <textarea
@@ -331,7 +328,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     rows={2}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Complete Flat/House, Apartment Name, Street, Landmark"
+                    placeholder={t.completeAddress}
                     className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-1 focus:ring-emerald-700"
                   />
                 </div>
@@ -363,7 +360,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <div>
                         <span className="font-bold block">{t.upiInstant}</span>
                         <span className="text-[11px] text-stone-500">
-                          Google Pay, PhonePe, Paytm, BHIM QR
+                          {t.upiInstantDesc}
                         </span>
                       </div>
                     </div>
@@ -376,7 +373,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         type="text"
                         value={upiIdInput}
                         onChange={(e) => setUpiIdInput(e.target.value)}
-                        placeholder="yourname@okhdfcbank"
+                        placeholder="saivarshak14@oksbi"
                         className="w-full p-2 bg-white rounded border border-stone-300 text-xs font-mono"
                       />
                     </div>
@@ -402,7 +399,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <div>
                         <span className="font-bold block">{t.cashOnDelivery}</span>
                         <span className="text-[11px] text-stone-500">
-                          Pay upon farm delivery verification
+                          {t.cashOnDeliveryDesc}
                         </span>
                       </div>
                     </div>
@@ -428,7 +425,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <div>
                         <span className="font-bold block">{t.cardsRuPay}</span>
                         <span className="text-[11px] text-stone-500">
-                          Domestic RuPay & International Cards
+                          {t.cardsRuPayDesc}
                         </span>
                       </div>
                     </div>
@@ -439,9 +436,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-emerald-800 text-white font-bold py-3 rounded-xl hover:bg-emerald-900 transition-colors shadow-sm text-xs flex items-center justify-center gap-2"
+                className="w-full bg-emerald-800 text-white font-bold py-3 rounded-xl hover:bg-emerald-900 transition-colors shadow-sm text-xs flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Confirm Harvest Order (₹{total})</span>
+                <span>{t.confirmHarvestOrder} (₹{total})</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -455,37 +452,37 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
               <div>
                 <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">
-                  Order ID: {placedOrder.id}
+                  {t.orderId}: {placedOrder.id}
                 </span>
                 <h3 className="text-xl font-bold text-stone-900 font-serif-display mt-1">
-                  Farm Harvest Dispatched to Queue
+                  {t.harvestDispatched}
                 </h3>
                 <p className="text-xs text-stone-600 mt-2 max-w-sm mx-auto">
-                  Your order has been transmitted directly to the farmer. Automated delivery scheduled for{' '}
+                  {t.orderDispatchedDesc}{' '}
                   <span className="font-bold text-stone-900">{placedOrder.estimatedDeliveryTime}</span>.
                 </p>
               </div>
 
               <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 text-left text-xs space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-stone-500">Direct Farmer Payout:</span>
+                  <span className="text-stone-500">{t.directFarmerPayout}:</span>
                   <span className="font-bold text-emerald-900 font-numeric">₹{placedOrder.subtotal}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-stone-500">Cold Transit Logistics:</span>
+                  <span className="text-stone-500">{t.coldTransitLogistics}:</span>
                   <span className="font-bold text-stone-900 font-numeric">₹{placedOrder.deliveryFee}</span>
                 </div>
                 <div className="flex justify-between border-t border-stone-200 pt-2 font-bold text-stone-900">
-                  <span>Total Amount Paid/Due:</span>
+                  <span>{t.totalAmountDue}:</span>
                   <span className="font-numeric">₹{placedOrder.total}</span>
                 </div>
               </div>
 
               <button
                 onClick={onClose}
-                className="w-full bg-emerald-800 text-white font-semibold py-2.5 rounded-xl hover:bg-emerald-900 text-xs shadow-sm"
+                className="w-full bg-emerald-800 text-white font-semibold py-2.5 rounded-xl hover:bg-emerald-900 text-xs shadow-sm cursor-pointer"
               >
-                View Live Delivery Tracker
+                {t.viewLiveTracker}
               </button>
             </div>
           )}
@@ -500,18 +497,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <span className="font-bold text-stone-900 font-numeric">₹{subtotal}</span>
               </div>
               <div className="flex justify-between text-stone-600">
-                <span>Cold-Chain Transit:</span>
+                <span>{t.coldTransitLogistics}:</span>
                 <span className="font-numeric font-medium">
                   {deliveryFee === 0 ? (
-                    <span className="text-emerald-700 font-bold">Free (Order ₹399+)</span>
+                    <span className="text-emerald-700 font-bold">{t.freeAbove399}</span>
                   ) : (
                     `₹${deliveryFee}`
                   )}
                 </span>
               </div>
               <div className="flex justify-between text-stone-500 text-[11px]">
-                <span>Platform Commission:</span>
-                <span className="text-emerald-700 font-bold">₹0.00 (Zero Fee)</span>
+                <span>{t.statCommission}:</span>
+                <span className="text-emerald-700 font-bold">{t.zeroCommission}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-stone-950 border-t border-stone-200 pt-2">
                 <span>{t.orderTotal}:</span>
@@ -521,7 +518,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
             <button
               onClick={() => setStep('checkout')}
-              className="w-full bg-emerald-800 text-white font-bold py-3 rounded-xl hover:bg-emerald-900 transition-colors shadow-sm text-xs flex items-center justify-center gap-2"
+              className="w-full bg-emerald-800 text-white font-bold py-3 rounded-xl hover:bg-emerald-900 transition-colors shadow-sm text-xs flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>{t.secureCheckout}</span>
               <ArrowRight className="w-4 h-4" />

@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { X, Lock, Mail, UserCheck, ShieldCheck, CheckCircle2, User as UserIcon } from 'lucide-react';
 import { User, UserRole, LanguageCode } from '../types';
 import { translations } from '../data/translations';
+import { StorageService } from '../services/storage';
 import { XivaLogo } from './XivaLogo';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: User;
+  currentUser: User | null;
   onLoginSuccess: (user: User) => void;
   language: LanguageCode;
 }
@@ -23,7 +24,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const [email, setEmail] = useState('saivarshak14@gmail.com');
   const [password, setPassword] = useState('1111');
-  const [selectedRole, setSelectedRole] = useState<UserRole>(currentUser.role || 'farmer');
+  const [selectedRole, setSelectedRole] = useState<UserRole>(currentUser?.role || 'farmer');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -37,6 +38,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     // Authenticate credentials as specified: saivarshak14@gmail.com / 1111
     if (email.toLowerCase() === 'saivarshak14@gmail.com' && password === '1111') {
+      StorageService.loginAdmin('saivarshak14@gmail.com', '1111');
       const loggedUser: User = {
         id: 'usr_varshak',
         email: 'saivarshak14@gmail.com',
@@ -68,6 +70,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setEmail('saivarshak14@gmail.com');
     setPassword('1111');
     setSelectedRole(role);
+    if (role === 'admin') {
+      StorageService.loginAdmin('saivarshak14@gmail.com', '1111');
+    }
     const user: User = {
       id: 'usr_varshak',
       email: 'saivarshak14@gmail.com',

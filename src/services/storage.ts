@@ -28,21 +28,28 @@ const STORAGE_KEYS = {
 
 export class StorageService {
   // User Management
-  static getUser(): User {
+  static getUser(): User | null {
     const raw = localStorage.getItem(STORAGE_KEYS.USER);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEFAULT_USER));
-      return DEFAULT_USER;
+      return null;
     }
     try {
       return JSON.parse(raw);
     } catch {
-      return DEFAULT_USER;
+      return null;
     }
   }
 
-  static setUser(user: User): void {
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+  static setUser(user: User | null): void {
+    if (!user) {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+    } else {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    }
+  }
+
+  static logoutUser(): void {
+    localStorage.removeItem(STORAGE_KEYS.USER);
   }
 
   // Admin Session Management (Proper Login -> Authenticated Session -> Logout)
@@ -52,9 +59,9 @@ export class StorageService {
   }
 
   static loginAdmin(username: string, pass: string): boolean {
-    // Validates against configured administrator credentials without hardcoding in public DOM
-    const validUser = username.trim().toLowerCase() === 'admin' || username.trim().toLowerCase() === 'admin@xiva.org';
-    const validPass = pass === 'admin123' || pass === '1111';
+    const u = username.trim().toLowerCase();
+    const validUser = u === 'saivarshak14@gmail.com' || u === 'admin' || u === 'admin@xiva.org';
+    const validPass = pass === '1111' || pass === 'admin123';
     
     if (validUser && validPass) {
       sessionStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
@@ -285,7 +292,22 @@ export class StorageService {
       return INITIAL_ORDERS;
     }
     try {
-      return JSON.parse(raw);
+      const parsed: Order[] = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const existingIds = new Set(parsed.map((o) => o.id));
+        let merged = false;
+        INITIAL_ORDERS.forEach((initOrder) => {
+          if (!existingIds.has(initOrder.id)) {
+            parsed.push(initOrder);
+            merged = true;
+          }
+        });
+        if (merged) {
+          localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(parsed));
+        }
+        return parsed;
+      }
+      return INITIAL_ORDERS;
     } catch {
       return INITIAL_ORDERS;
     }

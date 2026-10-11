@@ -1189,5 +1189,81 @@ export const INITIAL_ORDERS: Order[] = [
     currentLocationDesc: 'Temperature-monitored cold vehicle dispatched',
     driverName: 'Ramesh Reddy',
     tempCelsius: 4.5
+  },
+  {
+    id: 'ORD-9108',
+    consumerEmail: 'customer@xiva.org',
+    consumerName: 'Organic Kitchen',
+    items: [
+      {
+        product: INITIAL_PRODUCTS[16], // Onion
+        quantity: 4
+      },
+      {
+        product: INITIAL_PRODUCTS[17], // Potato
+        quantity: 3
+      },
+      {
+        product: INITIAL_PRODUCTS[19], // Carrot
+        quantity: 2
+      }
+    ],
+    subtotal: 310,
+    deliveryFee: 0,
+    total: 310,
+    status: 'delivered',
+    paymentMethod: 'upi',
+    paymentStatus: 'paid',
+    delivery: {
+      fullName: 'Organic Customer',
+      phone: '9848022334',
+      address: 'Plot 42, Green Meadows',
+      city: 'Bangalore',
+      pincode: '560001',
+      slot: 'early_morning',
+      deliveryDate: '2026-10-02'
+    },
+    createdAt: '2026-10-02 07:10 AM',
+    estimatedDeliveryTime: 'Delivered successfully',
+    liveStage: 4,
+    currentLocationDesc: 'Handed over at doorstep',
+    driverName: 'Suresh Varma',
+    tempCelsius: 4.0
+  },
+  {
+    id: 'ORD-8532',
+    consumerEmail: 'customer@xiva.org',
+    consumerName: 'Organic Kitchen',
+    items: [
+      {
+        product: INITIAL_PRODUCTS[22], // Mango / Alphonso
+        quantity: 2
+      },
+      {
+        product: INITIAL_PRODUCTS[1], // Wheat
+        quantity: 5
+      }
+    ],
+    subtotal: 480,
+    deliveryFee: 0,
+    total: 480,
+    status: 'delivered',
+    paymentMethod: 'card',
+    paymentStatus: 'paid',
+    delivery: {
+      fullName: 'Organic Customer',
+      phone: '9848022334',
+      address: 'Plot 42, Green Meadows',
+      city: 'Bangalore',
+      pincode: '560001',
+      slot: 'evening_fresh',
+      deliveryDate: '2026-09-28'
+    },
+    createdAt: '2026-09-28 05:40 PM',
+    estimatedDeliveryTime: 'Delivered successfully',
+    liveStage: 4,
+    currentLocationDesc: 'Handed over at doorstep',
+    driverName: 'Mahesh Kumar',
+    tempCelsius: 3.8
   }
 ];

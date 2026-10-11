@@ -202,9 +202,9 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-4 text-[11px] text-emerald-300">
-              <span>🌾 Paddy/Rice: ₹65/kg (Mandi: ₹54)</span>
-              <span className="hidden sm:inline">🍅 Tomato: ₹38/kg (Supermarket: ₹48)</span>
-              <span>🥭 Alphonso: ₹520/doz</span>
+              <span>{t.tickerPaddy}</span>
+              <span className="hidden sm:inline">{t.tickerTomato}</span>
+              <span>{t.tickerMango}</span>
             </div>
           </div>
         </div>

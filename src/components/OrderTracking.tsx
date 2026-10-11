@@ -3,38 +3,64 @@ import {
   Truck,
   CheckCircle2,
   Clock,
-  MapPin,
   ThermometerSnowflake,
   Phone,
   ShieldCheck,
-  Package,
-  Sparkles,
-  ChevronRight
+  ShoppingBag,
+  RotateCw,
+  Plus
 } from 'lucide-react';
-import { Order, LanguageCode } from '../types';
+import { Order, LanguageCode, CartItem } from '../types';
 import { translations } from '../data/translations';
+import { getProductLocalized } from '../data/productTranslations';
 
 interface OrderTrackingProps {
   orders: Order[];
   language: LanguageCode;
   onSelectProduct?: (productId: string) => void;
+  onQuickReorder?: (items: CartItem[]) => void;
 }
 
-export const OrderTracking: React.FC<OrderTrackingProps> = ({ orders, language }) => {
+export const OrderTracking: React.FC<OrderTrackingProps> = ({
+  orders,
+  language,
+  onQuickReorder
+}) => {
   const t = translations[language];
   const [selectedOrderId, setSelectedOrderId] = useState<string>(
     orders.length > 0 ? orders[0].id : ''
   );
+  const [reorderSuccessMsg, setReorderSuccessMsg] = useState<string | null>(null);
 
   const activeOrder = orders.find((o) => o.id === selectedOrderId) || orders[0];
 
   const stages = [
-    { title: 'Harvest Scheduled', desc: 'Farmer notified at village gate' },
-    { title: 'Hand-Harvested', desc: 'Plucked & washed in well-water' },
-    { title: 'Cold-Chain Transit', desc: 'Reefer vehicle monitored at 4°C' },
-    { title: 'Out for Delivery', desc: 'Urban dispatch rider en-route' },
-    { title: 'Delivered', desc: 'Handed over at doorstep' }
+    { title: t.stageHarvestScheduled, desc: t.stageHarvestScheduledDesc },
+    { title: t.stageHandHarvested, desc: t.stageHandHarvestedDesc },
+    { title: t.stageColdChain, desc: t.stageColdChainDesc },
+    { title: t.stageOutForDelivery, desc: t.stageOutForDeliveryDesc },
+    { title: t.stageDelivered, desc: t.stageDeliveredDesc }
   ];
+
+  const handleReorder = (items: CartItem[]) => {
+    if (onQuickReorder) {
+      onQuickReorder(items);
+      setReorderSuccessMsg(
+        language === 'te'
+          ? `${items.length} పంటలు మీ బుట్టలో చేర్చబడ్డాయి!`
+          : language === 'hi'
+          ? `${items.length} फसलें आपकी टोकरी में जोड़ी गईं!`
+          : language === 'ta'
+          ? `${items.length} பயிர்கள் உங்கள் கூடையில் சேர்க்கப்பட்டன!`
+          : language === 'mr'
+          ? `${items.length} पिके तुमच्या बास्केटमध्ये जोडली गेली!`
+          : language === 'pa'
+          ? `${items.length} ਫਸਲਾਂ ਤੁਹਾਡੀ ਟੋਕਰੀ ਵਿੱਚ ਪਾਈਆਂ ਗਈਆਂ!`
+          : `${items.length} crops added to your current basket!`
+      );
+      setTimeout(() => setReorderSuccessMsg(null), 3000);
+    }
+  };
 
   if (!activeOrder) {
     return (
@@ -42,9 +68,9 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orders, language }
         <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
           <Truck className="w-7 h-7" />
         </div>
-        <h3 className="text-xl font-bold text-stone-900 font-serif-display">No Active Orders Yet</h3>
+        <h3 className="text-xl font-bold text-stone-900 font-serif-display">{t.noOrdersTitle}</h3>
         <p className="text-xs text-stone-500 max-w-sm mx-auto">
-          When you place a direct farm harvest order, you can monitor the live temperature and reefer vehicle tracking right here.
+          {t.noOrdersDesc}
         </p>
       </div>
     );
@@ -52,23 +78,49 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orders, language }
 
   const currentStage = activeOrder.liveStage ?? 2;
 
+  const quickReorderLabel =
+    language === 'te'
+      ? 'త్వరిత రీఆర్డర్'
+      : language === 'hi'
+      ? 'त्वरित पुन: ऑर्डर'
+      : language === 'ta'
+      ? 'விரைவு மறு ஆர்டர்'
+      : language === 'mr'
+      ? 'झटपट पुन्हा ऑर्डर'
+      : language === 'pa'
+      ? 'ਤੁਰੰਤ ਮੁੜ ਆਰਡਰ'
+      : 'Quick Reorder';
+
+  const quickReorderAllLabel =
+    language === 'te'
+      ? 'మొత్తం రీఆర్డర్ చేయండి'
+      : language === 'hi'
+      ? 'सभी दोबारा ऑर्डर करें'
+      : language === 'ta'
+      ? 'அனைத்தையும் மீண்டும் ஆர்டர் செய்'
+      : language === 'mr'
+      ? 'सर्व पुन्हा ऑर्डर करा'
+      : language === 'pa'
+      ? 'ਸਾਰੀਆਂ ਮੁੜ ਆਰਡਰ ਕਰੋ'
+      : 'Quick Reorder All';
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-fadeIn">
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-            Real-Time Agricultural Cold-Chain
+            {t.trackingSubtitle}
           </span>
           <h2 className="text-2xl font-bold text-stone-900 font-serif-display mt-0.5">
-            Farm-to-Doorstep Tracking
+            {t.trackingTitle}
           </h2>
         </div>
 
         {/* Order Selector Dropdown if multiple orders */}
         {orders.length > 1 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-stone-500 font-medium">Select Order:</span>
+            <span className="text-xs text-stone-500 font-medium">{t.selectOrder}:</span>
             <select
               value={selectedOrderId}
               onChange={(e) => setSelectedOrderId(e.target.value)}
@@ -76,7 +128,7 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orders, language }
             >
               {orders.map((o) => (
                 <option key={o.id} value={o.id}>
-                  {o.id} ({o.items.length} items) - {o.status.toUpperCase()}
+                  {o.id} ({o.items.length} {t.crops}) - {o.status.toUpperCase()}
                 </option>
               ))}
             </select>
@@ -84,27 +136,53 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orders, language }
         )}
       </div>
 
+      {/* Success Notification Toast */}
+      {reorderSuccessMsg && (
+        <div className="bg-emerald-800 text-white px-4 py-3 rounded-xl shadow-lg text-xs flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+            <span className="font-semibold">{reorderSuccessMsg}</span>
+          </div>
+        </div>
+      )}
+
       {/* Main Tracking Card */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
         {/* Top Header of Active Order */}
-        <div className="p-6 bg-stone-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-6 bg-stone-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-emerald-400 font-mono font-bold tracking-wider">
                 {activeOrder.id}
               </span>
               <span className="text-xs text-stone-400">·</span>
-              <span className="text-xs text-stone-300">Slot: {activeOrder.delivery.slot.replace('_', ' ').toUpperCase()}</span>
+              <span className="text-xs text-stone-300">
+                {activeOrder.delivery.slot === 'early_morning'
+                  ? t.earlyMorningSlot
+                  : activeOrder.delivery.slot === 'evening_fresh'
+                  ? t.eveningSlot
+                  : t.weekendSlot}
+              </span>
             </div>
             <h3 className="text-lg font-bold text-white font-serif-display mt-1">
-              Estimated Delivery: {activeOrder.estimatedDeliveryTime}
+              {t.estimatedDelivery}: {activeOrder.estimatedDeliveryTime}
             </h3>
             <p className="text-xs text-stone-400 mt-0.5">
               Live Location: <span className="text-stone-200 font-medium">{activeOrder.currentLocationDesc}</span>
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Quick Reorder Button right in the header */}
+            <button
+              onClick={() => handleReorder(activeOrder.items)}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 px-3.5 rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              title="Add items from this order directly into current cart"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+              <span>{quickReorderLabel}</span>
+            </button>
+
             {activeOrder.tempCelsius !== undefined && (
               <div className="bg-stone-800/80 border border-stone-700 px-3 py-2 rounded-xl flex items-center gap-2">
                 <ThermometerSnowflake className="w-5 h-5 text-cyan-400" />
@@ -139,164 +217,285 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ orders, language }
               const isCurrent = idx === currentStage;
 
               return (
-                <div key={idx} className="relative flex md:flex-col items-center md:items-start gap-4 md:gap-2">
-                  <div className="flex items-center gap-3">
+                <div key={idx} className="flex flex-col items-start space-y-2">
+                  <div className="flex items-center gap-2">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-colors shadow-sm ${
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                         isCompleted
-                          ? 'bg-emerald-700 text-white'
-                          : 'bg-stone-200 text-stone-500'
-                      } ${isCurrent ? 'ring-4 ring-emerald-100' : ''}`}
+                          ? 'bg-emerald-700 text-white shadow-xs'
+                          : 'bg-stone-100 text-stone-400'
+                      }`}
                     >
                       {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
                     </div>
-
-                    <div className="md:hidden">
-                      <h4 className={`text-xs font-bold ${isCurrent ? 'text-emerald-900' : 'text-stone-700'}`}>
-                        {stage.title}
-                      </h4>
-                      <p className="text-[11px] text-stone-500">{stage.desc}</p>
-                    </div>
+                    {isCurrent && (
+                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                    )}
                   </div>
-
-                  <div className="hidden md:block">
+                  <div>
                     <h4
-                      className={`text-xs font-bold leading-tight ${
-                        isCurrent ? 'text-emerald-950 font-bold' : isCompleted ? 'text-stone-900' : 'text-stone-400'
+                      className={`text-xs font-bold ${
+                        isCompleted ? 'text-stone-900' : 'text-stone-400'
                       }`}
                     >
                       {stage.title}
                     </h4>
-                    <p className="text-[11px] text-stone-500 mt-0.5">{stage.desc}</p>
+                    <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+                      {stage.desc}
+                    </p>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
 
-        {/* Interactive Visual Map Representation */}
-        <div className="p-6 bg-stone-50 border-b border-stone-200">
-          <div className="bg-stone-100 rounded-xl p-4 border border-stone-300 relative overflow-hidden">
-            {/* Stylized Agriculture Transit SVG Map */}
-            <div className="w-full h-44 rounded-lg bg-stone-200/80 relative flex items-center justify-between px-6 sm:px-12 overflow-hidden border border-stone-300">
-              {/* Grid lines */}
-              <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#15803d_1px,transparent_1px)] [background-size:16px_16px]" />
-
-              {/* Waypoint 1: Rural Farm */}
-              <div className="relative z-10 flex flex-col items-center text-center">
-                <div className="w-10 h-10 rounded-full bg-emerald-800 text-white flex items-center justify-center shadow-md">
-                  🌾
-                </div>
-                <span className="text-[11px] font-bold text-emerald-950 mt-1">Village Farm</span>
-                <span className="text-[10px] text-stone-500">Aliabad, Shamirpet</span>
+          {/* Temperature & Cold Status Summary */}
+          <div className="mt-8 bg-stone-50 rounded-xl p-4 border border-stone-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                <Truck className="w-5 h-5" />
               </div>
-
-              {/* Connecting Line with Animated Truck */}
-              <div className="flex-1 mx-4 h-1.5 bg-stone-300 rounded relative">
-                <div
-                  className="h-full bg-emerald-600 rounded transition-all duration-1000"
-                  style={{ width: `${Math.min(100, (currentStage / 4) * 100)}%` }}
-                />
-                {/* Truck icon moving along line */}
-                <div
-                  className="absolute -top-3.5 transform -translate-x-1/2 transition-all duration-1000 bg-white p-1 rounded-full shadow border border-emerald-600 text-emerald-800"
-                  style={{ left: `${Math.min(95, Math.max(5, (currentStage / 4) * 100))}%` }}
-                >
-                  <Truck className="w-4 h-4" />
-                </div>
-              </div>
-
-              {/* Waypoint 2: Aggregation Hub */}
-              <div className="relative z-10 flex flex-col items-center text-center">
-                <div className="w-9 h-9 rounded-full bg-stone-700 text-white flex items-center justify-center shadow-sm">
-                  🏭
-                </div>
-                <span className="text-[11px] font-bold text-stone-800 mt-1">Cold Hub</span>
-                <span className="text-[10px] text-stone-500">ORR Junction</span>
-              </div>
-
-              {/* Connecting Line 2 */}
-              <div className="flex-1 mx-4 h-1.5 bg-stone-300 rounded relative">
-                <div
-                  className="h-full bg-emerald-600 rounded transition-all duration-1000"
-                  style={{
-                    width: `${Math.max(0, ((currentStage - 2) / 2) * 100)}%`
-                  }}
-                />
-              </div>
-
-              {/* Waypoint 3: Urban Consumer Kitchen */}
-              <div className="relative z-10 flex flex-col items-center text-center">
-                <div className="w-10 h-10 rounded-full bg-stone-900 text-white flex items-center justify-center shadow-md">
-                  🏡
-                </div>
-                <span className="text-[11px] font-bold text-stone-900 mt-1">Urban Kitchen</span>
-                <span className="text-[10px] text-stone-500">{activeOrder.delivery.city}</span>
+              <div>
+                <h5 className="text-xs font-bold text-stone-900">{t.vehicleTelemetry}</h5>
+                <p className="text-[11px] text-stone-600">
+                  {t.coldTempStatus} · Refrigerated village gate reefer
+                </p>
               </div>
             </div>
 
-            {/* Live transit note */}
-            <div className="mt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-stone-600 gap-2">
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-stone-400" />
-                <span>Next automated milestone: Urban Dispatch Handover</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-stone-500">Driver: {activeOrder.driverName || 'Ramesh Reddy'}</span>
-                <a
-                  href={`tel:${activeOrder.driverPhone || '+919885144321'}`}
-                  className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 font-bold"
-                >
-                  <Phone className="w-3 h-3" />
-                  <span>Call Rider</span>
-                </a>
-              </div>
+            <div className="flex items-center gap-3 text-xs text-stone-600">
+              <span className="text-stone-500">{t.assignedDriver}: {activeOrder.driverName || 'Ramesh Reddy'}</span>
+              <a
+                href={`tel:${activeOrder.driverPhone || '+919885144321'}`}
+                className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 font-bold"
+              >
+                <Phone className="w-3 h-3" />
+                <span>Call</span>
+              </a>
             </div>
           </div>
         </div>
 
         {/* Order Items Breakdown */}
         <div className="p-6 sm:p-8 space-y-4">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
-            Crops in this Batch ({activeOrder.items.length})
-          </h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">
+              {t.harvestItemsSummary} ({activeOrder.items.length})
+            </h4>
 
-          <div className="divide-y divide-stone-200">
-            {activeOrder.items.map((item, idx) => (
-              <div key={idx} className="py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="w-12 h-12 rounded-lg object-cover bg-stone-100 border border-stone-200"
-                  />
-                  <div>
-                    <h5 className="text-xs font-bold text-stone-900">{item.product.name}</h5>
-                    <p className="text-[11px] text-stone-500">
-                      Farmer: {item.product.farmerName} · Qty: {item.quantity} {item.product.unit}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-xs font-bold text-stone-900 font-numeric">
-                    ₹{item.product.price * item.quantity}
-                  </span>
-                  <span className="text-[10px] text-stone-400 block">
-                    (₹{item.product.price}/{item.product.unit})
-                  </span>
-                </div>
-              </div>
-            ))}
+            {/* Quick Reorder in section header */}
+            <button
+              onClick={() => handleReorder(activeOrder.items)}
+              className="text-xs font-bold text-emerald-800 hover:text-emerald-900 flex items-center gap-1.5 cursor-pointer"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+              <span>{quickReorderAllLabel}</span>
+            </button>
           </div>
 
-          <div className="pt-4 border-t border-stone-200 flex justify-between items-center text-xs">
-            <span className="text-stone-600">Delivering to: <strong className="text-stone-900">{activeOrder.delivery.address}</strong></span>
-            <span className="font-bold text-sm text-stone-900 font-numeric">Total: ₹{activeOrder.total}</span>
+          <div className="divide-y divide-stone-200">
+            {activeOrder.items.map((item, idx) => {
+              const loc = getProductLocalized(
+                item.product.id,
+                item.product.name,
+                item.product.category,
+                language,
+                item.product.description,
+                item.product.unit
+              );
+
+              return (
+                <div key={idx} className="py-3 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={item.product.image}
+                      alt={loc.name}
+                      className="w-12 h-12 rounded-lg object-cover bg-stone-100 border border-stone-200 shrink-0"
+                    />
+                    <div>
+                      <h5 className="text-xs font-bold text-stone-900">{loc.name}</h5>
+                      <p className="text-[11px] text-stone-500">
+                        {item.product.farmerName} · Qty: {item.quantity} {loc.unit}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-stone-900 font-numeric">
+                        ₹{item.product.price * item.quantity}
+                      </span>
+                      <span className="text-[10px] text-stone-400 block">
+                        (₹{item.product.price}/{loc.unit})
+                      </span>
+                    </div>
+
+                    {/* Single Item Quick Reorder button */}
+                    <button
+                      onClick={() => handleReorder([item])}
+                      className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 border border-emerald-200 transition-colors cursor-pointer"
+                      title="Add this item to basket"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Delivery & Quick Reorder Footer Bar */}
+          <div className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+            <span className="text-stone-600">
+              {t.deliveryDestination}: <strong className="text-stone-900">{activeOrder.delivery.address}</strong>
+            </span>
+            <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+              <span className="font-bold text-sm text-stone-900 font-numeric">
+                {t.orderTotal}: ₹{activeOrder.total}
+              </span>
+              <button
+                onClick={() => handleReorder(activeOrder.items)}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>{quickReorderAllLabel}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Previous Orders & 1-Click Quick Reorder Section */}
+      {orders.filter((o) => o.id !== activeOrder.id).length > 0 && (
+        <div className="space-y-4 pt-4 border-t border-stone-200">
+          <div>
+            <h3 className="text-lg font-bold text-stone-900 font-serif-display">
+              {language === 'te'
+                ? 'మునుపటి ఆర్డర్లు'
+                : language === 'hi'
+                ? 'पिछले ऑर्डर'
+                : language === 'ta'
+                ? 'முந்தைய ஆர்டர்கள்'
+                : language === 'mr'
+                ? 'मागील ऑर्डर्स'
+                : language === 'pa'
+                ? 'ਪਿਛਲੇ ਆਰਡਰ'
+                : 'Previous Orders'}
+            </h3>
+            <p className="text-xs text-stone-500">
+              {language === 'te'
+                ? 'ఒక్క క్లిక్‌తో మునుపటి ఆర్డర్ పంటలను మీ ప్రస్తుత బుట్టలో తిరిగి చేర్చండి'
+                : language === 'hi'
+                ? 'एक क्लिक में पिछले ऑर्डर की फसलें अपनी वर्तमान टोकरी में दोबारा जोड़ें'
+                : language === 'ta'
+                ? 'ஒரே கிளிக்கில் முந்தைய ஆர்டர் பயிர்களை உங்கள் நடப்பு கூடையில் மீண்டும் சேர்க்கவும்'
+                : language === 'mr'
+                ? 'एका क्लिकवर मागील ऑर्डरची पिके तुमच्या सध्याच्या बास्केटमध्ये पुन्हा जोडा'
+                : language === 'pa'
+                ? 'ਇੱਕ ਕਲਿੱਕ ਨਾਲ ਪਿਛਲੇ ਆਰਡਰ ਦੀਆਂ ਫਸਲਾਂ ਆਪਣੀ ਮੌਜੂਦਾ ਟੋਕਰੀ ਵਿੱਚ ਦੁਬਾਰਾ ਪਾਓ'
+                : 'Add items from previous orders directly into your current cart with one click.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {orders
+              .filter((o) => o.id !== activeOrder.id)
+              .map((pastOrder) => (
+                <div
+                  key={pastOrder.id}
+                  className="bg-white rounded-xl border border-stone-200 p-5 shadow-xs hover:border-emerald-300 transition-all space-y-4 flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                          {pastOrder.id}
+                        </span>
+                        <span className="text-xs text-stone-500">{pastOrder.createdAt}</span>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                        {pastOrder.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    {/* Items preview list */}
+                    <div className="space-y-2">
+                      {pastOrder.items.map((item, idx) => {
+                        const loc = getProductLocalized(
+                          item.product.id,
+                          item.product.name,
+                          item.product.category,
+                          language,
+                          item.product.description,
+                          item.product.unit
+                        );
+                        return (
+                          <div key={idx} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={item.product.image}
+                                alt={loc.name}
+                                className="w-8 h-8 rounded object-cover bg-stone-100 border border-stone-200"
+                              />
+                              <div>
+                                <span className="text-stone-800 font-medium block">
+                                  {loc.name}
+                                </span>
+                                <span className="text-stone-400 text-[11px]">
+                                  {item.quantity} {loc.unit}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="font-semibold text-stone-700 font-numeric">
+                              ₹{item.product.price * item.quantity}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] text-stone-400 block">{t.orderTotal}</span>
+                      <span className="font-bold text-sm text-stone-900 font-numeric">
+                        ₹{pastOrder.total}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedOrderId(pastOrder.id)}
+                        className="px-2.5 py-1.5 text-xs text-stone-600 hover:text-emerald-800 font-medium rounded-lg hover:bg-stone-50 border border-stone-200 transition-colors cursor-pointer"
+                      >
+                        {language === 'te'
+                          ? 'వివరాలు'
+                          : language === 'hi'
+                          ? 'विवरण'
+                          : language === 'ta'
+                          ? 'விவரங்கள்'
+                          : language === 'mr'
+                          ? 'तपशील'
+                          : language === 'pa'
+                          ? 'ਵੇਰਵਾ'
+                          : 'View Details'}
+                      </button>
+                      {/* One-click Quick Reorder button */}
+                      <button
+                        onClick={() => handleReorder(pastOrder.items)}
+                        className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-2xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Add items from this order directly into current cart with 1 click"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                        <span>{quickReorderLabel}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

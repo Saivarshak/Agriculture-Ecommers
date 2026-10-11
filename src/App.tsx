@@ -24,7 +24,7 @@ import { CheckCircle2, Sprout } from 'lucide-react';
 export default function App() {
   const [currentCategory, setCurrentCategory] = useState<ProductCategory | 'all'>('all');
   const [currentView, setCurrentView] = useState<'store' | 'farmer' | 'admin_verification' | 'orders'>('store');
-  const [user, setUser] = useState<User>(() => StorageService.getUser());
+  const [user, setUser] = useState<User | null>(() => StorageService.getUser());
   const [language, setLanguage] = useState<LanguageCode>(() => StorageService.getLanguage());
   const [products, setProducts] = useState<Product[]>(() => StorageService.getProducts());
   const [farmers, setFarmers] = useState<FarmerProfile[]>(() => StorageService.getFarmers());
@@ -83,6 +83,29 @@ export default function App() {
     setIsCartOpen(true);
   };
 
+  // Quick Reorder handler: Adds entire batch of items from a previous order into cart
+  const handleQuickReorder = (items: CartItem[]) => {
+    setCart((prev) => {
+      const nextCart = [...prev];
+      items.forEach((itemToReorder) => {
+        const idx = nextCart.findIndex((c) => c.product.id === itemToReorder.product.id);
+        if (idx > -1) {
+          nextCart[idx] = {
+            ...nextCart[idx],
+            quantity: nextCart[idx].quantity + itemToReorder.quantity
+          };
+        } else {
+          nextCart.push({
+            product: itemToReorder.product,
+            quantity: itemToReorder.quantity
+          });
+        }
+      });
+      return nextCart;
+    });
+    setIsCartOpen(true);
+  };
+
   const handleUpdateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       handleRemoveItem(productId);
@@ -105,15 +128,34 @@ export default function App() {
   const handleAdminLoginSuccess = () => {
     setIsAdmin(true);
     setIsAdminModalOpen(true);
+    const adminUser: User = {
+      id: 'usr_varshak',
+      email: 'saivarshak14@gmail.com',
+      name: 'Sai Varshak',
+      role: 'admin',
+      phone: '+91 98480 22334',
+      address: 'Plot 42, Green Meadows Agri Hub, Shamirpet, Hyderabad Rural'
+    };
+    setUser(adminUser);
+    StorageService.setUser(adminUser);
   };
 
   const handleAdminLogout = () => {
     StorageService.logoutAdmin();
+    StorageService.logoutUser();
     setIsAdmin(false);
+    setUser(null);
     setIsAdminModalOpen(false);
     if (currentView === 'admin_verification') {
       setCurrentView('store');
     }
+  };
+
+  const handleUserLogout = () => {
+    StorageService.logoutAdmin();
+    StorageService.logoutUser();
+    setIsAdmin(false);
+    setUser(null);
   };
 
   // Farmer operations
@@ -132,9 +174,11 @@ export default function App() {
     setCurrentView('orders');
   };
 
-  const currentFarmerProfile = farmers.find(
-    (f) => f.id === user.farmId || f.email.toLowerCase() === user.email.toLowerCase()
-  ) || farmers[0];
+  const currentFarmerProfile = user
+    ? farmers.find(
+        (f) => f.id === user.farmId || f.email.toLowerCase() === user.email.toLowerCase()
+      ) || farmers[0]
+    : farmers[0];
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f7f9f6] font-sans text-stone-900 relative">
@@ -172,6 +216,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenAdminLogin={() => setIsAdminModalOpen(true)}
         onLogoutAdmin={handleAdminLogout}
+        onLogoutUser={handleUserLogout}
         language={language}
         onSelectLanguage={handleLanguageChange}
         searchQuery={searchQuery}
@@ -221,6 +266,7 @@ export default function App() {
           <OrderTracking
             orders={orders}
             language={language}
+            onQuickReorder={handleQuickReorder}
             onSelectProduct={(id) => {
               const p = products.find((prod) => prod.id === id);
               if (p) setSelectedProduct(p);
@@ -264,6 +310,7 @@ export default function App() {
         onRemoveFromWishlist={handleToggleWishlist}
         onAddToCart={handleAddToCart}
         onSelectProduct={(p) => setSelectedProduct(p)}
+        language={language}
       />
 
       {/* Protected Admin Portal / Login Modal */}
@@ -275,6 +322,7 @@ export default function App() {
         onLogout={handleAdminLogout}
         products={products}
         onRefreshProducts={refreshData}
+        language={language}
       />
 
       {/* Customer Authentication Modal */}
@@ -285,6 +333,7 @@ export default function App() {
         onLoginSuccess={(u) => {
           setUser(u);
           StorageService.setUser(u);
+          setIsAdmin(StorageService.isAdminAuthenticated());
         }}
         language={language}
       />

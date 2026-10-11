@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Globe,
   LogOut,
+  LogIn,
   X,
   ChevronDown
 } from 'lucide-react';
@@ -23,11 +24,12 @@ export interface TopBarProps {
   wishlistCount: number;
   onOpenCart: () => void;
   onOpenWishlist: () => void;
-  user: User;
+  user: User | null;
   isAdmin: boolean;
   onOpenAuth: () => void;
   onOpenAdminLogin: () => void;
   onLogoutAdmin: () => void;
+  onLogoutUser?: () => void;
   language: LanguageCode;
   onSelectLanguage: (lang: LanguageCode) => void;
   searchQuery: string;
@@ -48,6 +50,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenAuth,
   onOpenAdminLogin,
   onLogoutAdmin,
+  onLogoutUser,
   language,
   onSelectLanguage,
   searchQuery,
@@ -134,23 +137,19 @@ export const TopBar: React.FC<TopBarProps> = ({
           >
             {t.navFarmerDashboard}
           </button>
-          <button
-            onClick={() => {
-              if (isAdmin) {
-                onSelectTab('admin');
-              } else {
-                onOpenAdminLogin();
-              }
-            }}
-            className={`transition-colors hover:text-emerald-800 py-1 border-b-2 flex items-center gap-1.5 ${
-              currentTab === 'admin'
-                ? 'text-emerald-800 font-bold border-emerald-700'
-                : 'border-transparent text-stone-600'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4 text-emerald-700" />
-            <span>{t.navAdminVerification}</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => onSelectTab('admin')}
+              className={`transition-colors hover:text-emerald-800 py-1 border-b-2 flex items-center gap-1.5 ${
+                currentTab === 'admin'
+                  ? 'text-emerald-800 font-bold border-emerald-700'
+                  : 'border-transparent text-stone-600'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-700" />
+              <span>{t.navAdminVerification}</span>
+            </button>
+          )}
           <button
             onClick={() => onSelectTab('orders')}
             className={`transition-colors hover:text-emerald-800 py-1 border-b-2 ${
@@ -215,130 +214,141 @@ export const TopBar: React.FC<TopBarProps> = ({
             )}
           </button>
 
-          {/* User Account / Profile Menu */}
-          <div className="relative">
+          {/* User Account / Profile Menu or Login Button */}
+          {!user && !isAdmin ? (
             <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              onClick={onOpenAuth}
               className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 px-3.5 sm:px-4 rounded-full transition-all shadow-xs hover:shadow flex items-center gap-2 cursor-pointer"
+              title={t.login}
             >
-              <UserCheck className="w-3.5 h-3.5" />
+              <LogIn className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">
-                {isAdmin
-                  ? language === 'te'
-                    ? 'అడ్మిన్'
-                    : language === 'hi'
-                    ? 'प्रशासक'
-                    : language === 'ta'
-                    ? 'நிர்வாகி'
-                    : language === 'mr'
-                    ? 'प्रशासक'
-                    : language === 'pa'
-                    ? 'ਪ੍ਰਸ਼ਾਸਕ'
-                    : 'Admin'
-                  : user.name.split(' ')[0]}
+                {t.login}
               </span>
-              <ChevronDown className="w-3 h-3 opacity-80" />
             </button>
-
-            {showProfileMenu && (
-              <div
-                className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-stone-200 py-2 z-50 text-xs animate-fadeIn"
-                onMouseLeave={() => setShowProfileMenu(false)}
+          ) : (
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 px-3.5 sm:px-4 rounded-full transition-all shadow-xs hover:shadow flex items-center gap-2 cursor-pointer"
               >
-                {isAdmin ? (
-                  <>
-                    <div className="px-4 py-2 border-b border-stone-100 bg-emerald-50 text-emerald-950">
-                      <span className="font-bold flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                        {t.adminAuthenticated}
-                      </span>
-                      <span className="text-[10px] text-emerald-700 block mt-0.5">
-                        {t.adminDesc}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        onSelectTab('admin');
-                      }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-stone-50 font-semibold text-stone-800 flex items-center gap-2"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>{t.adminVerificationDesk}</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        onLogoutAdmin();
-                      }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-rose-50 text-rose-700 font-bold flex items-center gap-2 border-t border-stone-100"
-                    >
-                      <LogOut className="w-3.5 h-3.5 text-rose-600" />
-                      <span>{t.logoutAdmin}</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="px-4 py-2 border-b border-stone-100 text-stone-600">
-                      <span className="font-bold block text-stone-900">{user.name}</span>
-                      <span className="text-[10px] text-stone-400 block">{user.email}</span>
-                      <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
-                        {user.role === 'consumer' ? t.authConsumer : user.role === 'farmer' ? t.authFarmer : 'Admin'}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        onSelectTab('orders');
-                      }}
-                      className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 font-medium"
-                    >
-                      {t.trackMyOrders}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        onOpenWishlist();
-                      }}
-                      className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 font-medium"
-                    >
-                      {t.myWishlist} ({wishlistCount})
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        onSelectTab('farmer');
-                      }}
-                      className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 font-medium"
-                    >
-                      {t.farmerDashboard}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        onOpenAuth();
-                      }}
-                      className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 font-medium border-t border-stone-100"
-                    >
-                      {t.signInSwitchRole}
-                    </button>
-                    <div className="border-t border-stone-100 mt-1 pt-1">
+                <UserCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">
+                  {isAdmin
+                    ? language === 'te'
+                      ? 'అడ్మిన్'
+                      : language === 'hi'
+                      ? 'प्रशासक'
+                      : language === 'ta'
+                      ? 'நிர்வாகி'
+                      : language === 'mr'
+                      ? 'प्रशासक'
+                      : language === 'pa'
+                      ? 'ਪ੍ਰਸ਼ਾਸਕ'
+                      : 'Admin'
+                    : user?.name.split(' ')[0]}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-80" />
+              </button>
+
+              {showProfileMenu && (
+                <div
+                  className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-stone-200 py-2 z-50 text-xs animate-fadeIn"
+                  onMouseLeave={() => setShowProfileMenu(false)}
+                >
+                  {isAdmin ? (
+                    <>
+                      <div className="px-4 py-2 border-b border-stone-100 bg-emerald-50 text-emerald-950">
+                        <span className="font-bold flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                          {t.adminAuthenticated}
+                        </span>
+                        <span className="text-[10px] text-emerald-700 block mt-0.5">
+                          {t.adminDesc}
+                        </span>
+                      </div>
                       <button
                         onClick={() => {
                           setShowProfileMenu(false);
-                          onOpenAdminLogin();
+                          onSelectTab('admin');
                         }}
-                        className="w-full text-left px-4 py-1.5 hover:bg-stone-50 text-stone-400 hover:text-emerald-800 text-[11px] flex items-center gap-1.5"
+                        className="w-full text-left px-4 py-2.5 hover:bg-stone-50 font-semibold text-stone-800 flex items-center gap-2 cursor-pointer"
                       >
-                        <ShieldCheck className="w-3 h-3" />
-                        <span>{t.adminPortal}</span>
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>{t.adminVerificationDesk}</span>
                       </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onLogoutAdmin();
+                        }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-rose-50 text-rose-700 font-bold flex items-center gap-2 border-t border-stone-100 cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                        <span>{t.logoutAdmin}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="px-4 py-2 border-b border-stone-100 text-stone-600">
+                        <span className="font-bold block text-stone-900">{user?.name}</span>
+                        <span className="text-[10px] text-stone-400 block">{user?.email}</span>
+                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                          {user?.role === 'consumer' ? t.authConsumer : user?.role === 'farmer' ? t.authFarmer : 'Admin'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onSelectTab('orders');
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 font-medium cursor-pointer"
+                      >
+                        {t.trackMyOrders}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onOpenWishlist();
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 font-medium cursor-pointer"
+                      >
+                        {t.myWishlist} ({wishlistCount})
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onSelectTab('farmer');
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 font-medium cursor-pointer"
+                      >
+                        {t.farmerDashboard}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onOpenAuth();
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 font-medium border-t border-stone-100 cursor-pointer"
+                      >
+                        {t.signInSwitchRole}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          if (onLogoutUser) onLogoutUser();
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-rose-50 text-rose-700 font-bold flex items-center gap-2 border-t border-stone-100 cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                        <span>{language === 'te' ? 'లాగ్ అవుట్' : language === 'hi' ? 'लॉग आउट' : language === 'ta' ? 'வெளியேறு' : language === 'mr' ? 'लॉग आउट' : language === 'pa' ? 'ਲੌਗ ਆਉਟ' : 'Log Out'}</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -367,22 +377,18 @@ export const TopBar: React.FC<TopBarProps> = ({
         >
           {t.navFarmerDashboard}
         </button>
-        <button
-          onClick={() => {
-            if (isAdmin) {
-              onSelectTab('admin');
-            } else {
-              onOpenAdminLogin();
-            }
-          }}
-          className={`py-1 px-2.5 rounded-lg transition-colors ${
-            currentTab === 'admin'
-              ? 'text-emerald-800 font-bold bg-emerald-100'
-              : 'hover:bg-stone-100'
-          }`}
-        >
-          {t.navAdminVerification}
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => onSelectTab('admin')}
+            className={`py-1 px-2.5 rounded-lg transition-colors ${
+              currentTab === 'admin'
+                ? 'text-emerald-800 font-bold bg-emerald-100'
+                : 'hover:bg-stone-100'
+            }`}
+          >
+            {t.navAdminVerification}
+          </button>
+        )}
         <button
           onClick={() => onSelectTab('orders')}
           className={`py-1 px-2.5 rounded-lg transition-colors ${

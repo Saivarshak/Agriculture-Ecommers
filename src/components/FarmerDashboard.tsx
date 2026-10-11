@@ -20,7 +20,7 @@ import { translations } from '../data/translations';
 import { StorageService } from '../services/storage';
 
 interface FarmerDashboardProps {
-  user: User;
+  user: User | null;
   farmer: FarmerProfile | undefined;
   products: Product[];
   onAddProduct: (product: Product) => void;
@@ -82,7 +82,7 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
     const newProd: Product = {
       id: `prod_custom_${Date.now()}`,
       farmerId: farmer?.id || 'farm_varshak_01',
-      farmerName: farmer?.farmerName || user.name,
+      farmerName: farmer?.farmerName || user?.name || 'Sai Varshak',
       farmerVillage: farmer?.village || 'Aliabad, Telangana',
       farmerVerified: farmer?.verificationStatus === 'verified',
       name: newTitle.trim(),
@@ -156,11 +156,11 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold font-serif-display leading-tight">
-              {farmer?.farmName || `${user.name}'s Bio-Farm`}
+              {farmer?.farmName || `${user?.name || 'Sai Varshak'}'s Bio-Farm`}
             </h1>
 
             <p className="text-xs sm:text-sm text-stone-300 max-w-xl">
-              Owner: <strong className="text-white">{farmer?.farmerName || user.name}</strong> ({farmer?.village}, {farmer?.district}) · Land: {farmer?.landAcreage || 14.5} Acres · Soil: {farmer?.soilType || 'Rich Loam'}
+              Owner: <strong className="text-white">{farmer?.farmerName || user?.name || 'Sai Varshak'}</strong> ({farmer?.village}, {farmer?.district}) · Land: {farmer?.landAcreage || 14.5} Acres · Soil: {farmer?.soilType || 'Rich Loam'}
             </p>
           </div>
 
@@ -222,46 +222,46 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
       {/* Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 block">Total Harvest Value</span>
+          <span className="text-xs text-stone-500 block">{t.estHarvestValue}</span>
           <span className="text-xl font-bold text-stone-900 font-numeric mt-1 block">
             ₹{estimatedHarvestValue.toLocaleString()}
           </span>
           <span className="text-[10px] text-emerald-700 font-medium mt-1 flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3" />
-            100% directly payable to you
+            {t.directToFarmer}
           </span>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 block">Active Produce Listed</span>
+          <span className="text-xs text-stone-500 block">{t.totalActiveCrops}</span>
           <span className="text-xl font-bold text-stone-900 font-numeric mt-1 block">
-            {myProducts.length} Crops
+            {myProducts.length} {t.crops}
           </span>
           <span className="text-[10px] text-stone-500 mt-1 block">
-            {totalStockKg} units ready in inventory
+            {totalStockKg} {t.stockReady}
           </span>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 block">Customer Rating</span>
+          <span className="text-xs text-stone-500 block">{t.avgCustomerRating}</span>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-xl font-bold text-stone-900 font-numeric">
               ★ {averageRating}
             </span>
-            <span className="text-xs text-stone-500 font-numeric">({totalReviews} reviews)</span>
+            <span className="text-xs text-stone-500 font-numeric">({totalReviews} {t.reviews})</span>
           </div>
           <span className="text-[10px] text-stone-500 mt-1 block">
-            Verified consumer purchases
+            {t.customerReviews}
           </span>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 block">Platform Commission</span>
+          <span className="text-xs text-stone-500 block">{t.statCommission}</span>
           <span className="text-xl font-bold text-emerald-800 font-numeric mt-1 block">
             0% (FREE)
           </span>
           <span className="text-[10px] text-stone-500 mt-1 block">
-            Subsidized for smallholders
+            {t.zeroCommission}
           </span>
         </div>
       </div>
@@ -270,38 +270,38 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
       <div className="flex items-center gap-2 border-b border-stone-200">
         <button
           onClick={() => setActiveTab('inventory')}
-          className={`pb-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
+          className={`pb-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'inventory'
               ? 'border-emerald-700 text-emerald-950 font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-900'
           }`}
         >
           <Package className="w-4 h-4" />
-          <span>Crop Inventory Management</span>
+          <span>{t.tabInventory}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('verification')}
-          className={`pb-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
+          className={`pb-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'verification'
               ? 'border-emerald-700 text-emerald-950 font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-900'
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          <span>Farmer Verification & Documents ({farmer?.documents.length || 0})</span>
+          <span>{t.tabVerification} ({farmer?.documents.length || 0})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`pb-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 ${
+          className={`pb-3 text-xs font-bold transition-colors border-b-2 flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'analytics'
               ? 'border-emerald-700 text-emerald-950 font-bold'
               : 'border-transparent text-stone-500 hover:text-stone-900'
           }`}
         >
           <TrendingUp className="w-4 h-4" />
-          <span>Mandi vs Direct Sales Analytics</span>
+          <span>{t.tabAnalytics}</span>
         </button>
       </div>
 
@@ -311,10 +311,10 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-base font-bold text-stone-900 font-serif-display">
-                Current Farm Produce & Live Stock
+                {t.farmerHubTitle}
               </h3>
               <p className="text-xs text-stone-500">
-                Update daily morning harvest quantities or add newly picked vegetables & fruits.
+                {t.farmerHubDesc}
               </p>
             </div>
 

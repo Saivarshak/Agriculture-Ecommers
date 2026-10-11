@@ -22,7 +22,7 @@ interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
   onAddToCart: (product: Product, quantity: number) => void;
-  user: User;
+  user: User | null;
   language: LanguageCode;
   onOpenOrders: () => void;
 }
@@ -51,10 +51,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const [reviewError, setReviewError] = useState<string | null>(null);
 
   // Check verified purchase
-  const hasPurchased = StorageService.hasVerifiedPurchase(user.email, product.id);
+  const hasPurchased = user ? StorageService.hasVerifiedPurchase(user.email, product.id) : false;
 
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setReviewError('Please sign in to write a review for this crop.');
+      return;
+    }
     if (!newComment.trim()) {
       setReviewError('Please write your review feedback.');
       return;
@@ -84,8 +88,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const handleSimulateVerifiedPurchase = () => {
     const dummyOrder = {
       id: `ORD-TEST-${Math.floor(1000 + Math.random() * 9000)}`,
-      consumerEmail: user.email,
-      consumerName: user.name,
+      consumerEmail: user?.email || 'customer@xiva.org',
+      consumerName: user?.name || 'Customer',
       items: [{ product, quantity: 1 }],
       subtotal: product.price,
       deliveryFee: 0,
@@ -94,8 +98,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       paymentMethod: 'upi' as const,
       paymentStatus: 'paid' as const,
       delivery: {
-        fullName: user.name,
-        phone: user.phone || '9876543210',
+        fullName: user?.name || 'Customer',
+        phone: user?.phone || '9876543210',
         address: 'User Kitchen',
         city: 'Hyderabad',
         pincode: '500001',
@@ -151,7 +155,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {/* Zero Middleman badge */}
               <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-semibold text-emerald-900 flex items-center gap-1.5 shadow-sm">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Zero Middleman: 100% to Farmer</span>
+                <span>{t.zeroMiddlemanBadge}</span>
               </div>
             </div>
 
@@ -163,11 +167,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   {product.farmerVerified ? (
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                      Verified Local Farmer
+                      {t.verifiedLocalFarmer}
                     </span>
                   ) : (
                     <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      Verification in Progress
+                      {t.verificationInProgress}
                     </span>
                   )}
                 </div>
@@ -176,17 +180,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <div className="flex flex-wrap items-center gap-y-1 text-xs text-stone-600">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-stone-400" />
-                  {product.farmerVillage} ({product.farmDistanceKm} km away)
+                  {product.farmerVillage} ({product.farmDistanceKm} {t.away})
                 </span>
                 <span className="mx-2 text-stone-300">·</span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-stone-400" />
-                  {product.harvestTime}
+                  {product.harvestTime || t.freshBatch}
                 </span>
               </div>
 
               <div className="pt-2 border-t border-stone-200 text-xs text-stone-600">
-                <span className="font-semibold text-stone-800">Organic Standard: </span>
+                <span className="font-semibold text-stone-800">{t.organicStandard}: </span>
                 {product.organicCertification}
               </div>
             </div>
@@ -233,7 +237,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </div>
                   {product.mandiPriceBenchmark ? (
                     <div className="text-right">
-                      <span className="text-xs text-stone-500 block">APMC Mandi Middleman Rate</span>
+                      <span className="text-xs text-stone-500 block">{t.apmcRate}</span>
                       <span className="text-xs text-stone-400 line-through font-numeric">
                         ₹{product.mandiPriceBenchmark} / {loc.unit}
                       </span>
@@ -244,7 +248,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   <div className="mt-2 text-xs text-emerald-800 flex items-center gap-1.5">
                     <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
                     <span>
-                      Farmer gains +{Math.round(((product.price - product.mandiPriceBenchmark) / product.mandiPriceBenchmark) * 100)}% higher direct realization!
+                      {t.farmerGainHigher} (+{Math.round(((product.price - product.mandiPriceBenchmark) / product.mandiPriceBenchmark) * 100)}%)
                     </span>
                   </div>
                 ) : null}
@@ -253,14 +257,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {/* Description */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-                  Farm Story & Harvesting
+                  {t.farmStory}
                 </h4>
                 <p className="text-sm text-stone-600 leading-relaxed">{loc.description}</p>
               </div>
 
               {/* Nutritional Highlight */}
               <div className="bg-stone-50 p-3 rounded-lg border border-stone-200 text-xs text-stone-700">
-                <span className="font-semibold text-stone-900 block mb-0.5">Nutritional & Soil Vitality:</span>
+                <span className="font-semibold text-stone-900 block mb-0.5">{t.nutritionalValue}:</span>
                 {product.nutrition}
               </div>
             </div>
@@ -269,7 +273,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="pt-4 border-t border-stone-200 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-stone-700">Quantity ({product.unit}):</span>
+                  <span className="text-xs font-semibold text-stone-700">{t.crops} ({loc.unit}):</span>
                   <div className="flex items-center border border-stone-300 rounded-lg overflow-hidden bg-white">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -289,7 +293,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-stone-500 block">Total Price:</span>
+                  <span className="text-xs text-stone-500 block">{t.orderTotal}:</span>
                   <span className="text-xl font-bold text-stone-900 font-numeric">
                     ₹{product.price * quantity}
                   </span>
@@ -302,15 +306,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     onAddToCart(product, quantity);
                     onClose();
                   }}
-                  className="flex-1 bg-emerald-800 text-white font-semibold py-3 px-4 rounded-xl hover:bg-emerald-900 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                  className="flex-1 bg-emerald-800 text-white font-semibold py-3 px-4 rounded-xl hover:bg-emerald-900 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>{t.addToCart} (₹{product.price * quantity})</span>
+                  <span>{t.addToBasket} (₹{product.price * quantity})</span>
                 </button>
               </div>
 
               <p className="text-[11px] text-center text-stone-500">
-                🌱 Harvested after order placement. Guaranteed delivered in temperature-controlled reefer crate.
+                {t.coldTransportGuaranteed}
               </p>
             </div>
           </div>
@@ -360,15 +364,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
                   <span>
-                    To protect farmers from fraudulent ratings, only customers who purchased this harvest can submit reviews.
+                    {t.reviewNoticeDelivered}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleSimulateVerifiedPurchase}
-                  className="px-3 py-1 bg-amber-700 hover:bg-amber-800 text-white rounded font-medium text-xs whitespace-nowrap shadow-sm"
+                  className="px-3 py-1 bg-amber-700 hover:bg-amber-800 text-white rounded font-medium text-xs whitespace-nowrap shadow-sm cursor-pointer"
                 >
-                  Quick Test: Simulate Verified Purchase
+                  {t.simulateDeliveredOrder}
                 </button>
               </div>
             ) : null}
@@ -376,7 +380,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {reviewSubmitted && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 font-medium flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Thank you! Your verified review has been published to this farm produce listing.
+                {t.reviewSuccess}
               </div>
             )}
 
@@ -389,7 +393,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <form onSubmit={handleReviewSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Your Overall Star Rating (1 - 5)
+                  {t.starRating} (1 - 5)
                 </label>
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -397,7 +401,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       key={star}
                       type="button"
                       onClick={() => setNewRating(star)}
-                      className="p-1 hover:scale-110 transition-transform focus:outline-none"
+                      className="p-1 hover:scale-110 transition-transform focus:outline-none cursor-pointer"
                     >
                       <Star
                         className={`w-6 h-6 ${
@@ -409,19 +413,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     </button>
                   ))}
                   <span className="text-xs font-semibold text-stone-700 ml-2 font-numeric">
-                    {newRating} out of 5 Stars
+                    {newRating} / 5
                   </span>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Detailed Experience (Taste, Freshness, Packaging, Farmer Support)
+                  {t.customerReviews}
                 </label>
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="e.g. Crisp morning freshness, authentic native flavor, arrived on time..."
+                  placeholder={t.feedbackPlaceholder}
                   rows={3}
                   className="w-full text-xs text-stone-900 p-3 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600"
                 />

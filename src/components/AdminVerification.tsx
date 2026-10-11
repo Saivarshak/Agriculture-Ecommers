@@ -17,7 +17,7 @@ import { translations } from '../data/translations';
 import { StorageService } from '../services/storage';
 
 interface AdminVerificationProps {
-  user: User;
+  user: User | null;
   farmers: FarmerProfile[];
   onRefreshData: () => void;
   language: LanguageCode;
@@ -50,7 +50,7 @@ export const AdminVerification: React.FC<AdminVerificationProps> = ({
     StorageService.reviewFarmerApplication(
       farmerId,
       'approved',
-      user.name || 'Admin Verification Desk'
+      user?.name || 'Admin Verification Desk'
     );
     setActionNotice(`Farmer "${selectedFarmer?.farmerName}" approved and verified badge granted!`);
     onRefreshData();
@@ -65,7 +65,7 @@ export const AdminVerification: React.FC<AdminVerificationProps> = ({
     StorageService.reviewFarmerApplication(
       farmerId,
       'rejected',
-      user.name || 'Admin Verification Desk',
+      user?.name || 'Admin Verification Desk',
       rejectReason
     );
     setShowRejectPrompt(false);
@@ -84,13 +84,13 @@ export const AdminVerification: React.FC<AdminVerificationProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-            Official Land & Producer Audit
+            {t.adminAuditSubtitle}
           </span>
           <h2 className="text-2xl font-bold text-stone-900 font-serif-display mt-0.5">
-            Farmer Verification & Compliance Desk
+            {t.adminAuditTitle}
           </h2>
           <p className="text-xs text-stone-500 mt-1">
-            Review land records, Kisan registration cards, and organic certifications before conferring the marketplace verified badge.
+            {t.adminAuditDesc}
           </p>
         </div>
 
@@ -98,11 +98,11 @@ export const AdminVerification: React.FC<AdminVerificationProps> = ({
         <div className="flex items-center gap-3">
           <div className="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-xs">
             <span className="text-amber-800 font-bold font-numeric">{pendingCount}</span>
-            <span className="text-amber-700 ml-1">Pending Audit</span>
+            <span className="text-amber-700 ml-1">{t.filterPending}</span>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs">
             <span className="text-emerald-800 font-bold font-numeric">{verifiedCount}</span>
-            <span className="text-emerald-700 ml-1">Verified Badged</span>
+            <span className="text-emerald-700 ml-1">{t.filterVerified}</span>
           </div>
         </div>
       </div>
@@ -119,7 +119,7 @@ export const AdminVerification: React.FC<AdminVerificationProps> = ({
         {/* Left Column: Applications List */}
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-stone-900">Farmer Applications</h3>
+            <h3 className="text-sm font-bold text-stone-900">{t.tabVerification}</h3>
             <span className="text-xs text-stone-400 font-numeric">{filteredFarmers.length} total</span>
           </div>
 
@@ -131,7 +131,7 @@ export const AdminVerification: React.FC<AdminVerificationProps> = ({
                 filterStatus === 'all' ? 'bg-white shadow-xs text-stone-900 font-bold' : 'text-stone-500'
               }`}
             >
-              All
+              {t.filterAll}
             </button>
             <button
               onClick={() => setFilterStatus('pending')}
@@ -139,7 +139,7 @@ export const AdminVerification: React.FC<AdminVerificationProps> = ({
                 filterStatus === 'pending' ? 'bg-white shadow-xs text-amber-800 font-bold' : 'text-stone-500'
               }`}
             >
-              Pending
+              {t.filterPending}
             </button>
             <button
               onClick={() => setFilterStatus('verified')}
@@ -147,7 +147,7 @@ export const AdminVerification: React.FC<AdminVerificationProps> = ({
                 filterStatus === 'verified' ? 'bg-white shadow-xs text-emerald-800 font-bold' : 'text-stone-500'
               }`}
             >
-              Verified
+              {t.filterVerified}
             </button>
           </div>
 
