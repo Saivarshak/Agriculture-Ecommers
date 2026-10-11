@@ -2,167 +2,120 @@
 
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    color: #1c1917;
-    background-color: #f7f9f6;
-    overflow-x: hidden;
-  }
-
-  h1, h2, h3, .font-serif-display {
-    font-family: 'Playfair Display', Georgia, serif;
-  }
-
-  .font-numeric {
-    font-variant-numeric: tabular-nums;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
 
-/* Custom subtle scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f5f0;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5c8;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a390;
+.font-serif-display {
+  font-family: 'Playfair Display', Georgia, Cambria, 'Times New Roman', Times, serif;
 }
 
-/* Premium Leaf Floating & Gentle Breeze Keyframes */
-@keyframes leaf-float-1 {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0.7;
+.font-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
-  35% {
-    transform: translate(14px, -24px) rotate(8deg);
-    opacity: 0.9;
-  }
-  65% {
-    transform: translate(-10px, -46px) rotate(-6deg);
-    opacity: 0.75;
-  }
-  85% {
-    transform: translate(8px, -20px) rotate(4deg);
-    opacity: 0.85;
-  }
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0.7;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes leaf-float-2 {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0.65;
-  }
-  30% {
-    transform: translate(-16px, -30px) rotate(-12deg);
-    opacity: 0.85;
-  }
-  70% {
-    transform: translate(12px, -55px) rotate(9deg);
-    opacity: 0.7;
-  }
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0.65;
-  }
-}
-
-@keyframes leaf-float-3 {
-  0% {
-    transform: translate(0, 0) rotate(0deg) scale(1);
-    opacity: 0.55;
-  }
-  40% {
-    transform: translate(20px, -38px) rotate(15deg) scale(1.04);
-    opacity: 0.8;
-  }
-  80% {
-    transform: translate(-12px, -20px) rotate(-8deg) scale(0.97);
-    opacity: 0.65;
-  }
-  100% {
-    transform: translate(0, 0) rotate(0deg) scale(1);
-    opacity: 0.55;
-  }
-}
-
-@keyframes gentle-sway {
+@keyframes sunlight {
   0%, 100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(4deg);
-  }
-}
-
-@keyframes sunlight-glow {
-  0%, 100% {
+    transform: scale(1) translate(0, 0);
     opacity: 0.35;
-    transform: scale(1);
   }
   50% {
+    transform: scale(1.08) translate(15px, -10px);
     opacity: 0.55;
-    transform: scale(1.08);
   }
 }
 
-.animate-leaf-1 {
-  animation: leaf-float-1 14s ease-in-out infinite;
-  will-change: transform, opacity;
+@keyframes leafSway {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-4px);
+  }
 }
 
-.animate-leaf-2 {
-  animation: leaf-float-2 18s ease-in-out infinite;
-  will-change: transform, opacity;
+@keyframes leafFloat1 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(8px, -12px) rotate(6deg);
+  }
+  50% {
+    transform: translate(16px, -4px) rotate(12deg);
+  }
+  75% {
+    transform: translate(6px, 8px) rotate(4deg);
+  }
 }
 
-.animate-leaf-3 {
-  animation: leaf-float-3 22s ease-in-out infinite;
-  will-change: transform, opacity;
+@keyframes leafFloat2 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(-10px, -15px) rotate(-8deg);
+  }
+  66% {
+    transform: translate(-18px, 6px) rotate(-14deg);
+  }
 }
 
-.animate-leaf-4 {
-  animation: leaf-float-1 26s ease-in-out infinite reverse;
-  will-change: transform, opacity;
+@keyframes leafFloat3 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(12px, -10px) rotate(10deg);
+  }
 }
 
-.animate-leaf-sway {
-  animation: gentle-sway 10s ease-in-out infinite;
-  transform-origin: bottom center;
+@keyframes leafFloat4 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-14px, -12px) rotate(-12deg);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-sunlight {
-  animation: sunlight-glow 8s ease-in-out infinite;
+  animation: sunlight 8s ease-in-out infinite;
 }
 
-/* Accessibility: respect reduced motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  .animate-leaf-1,
-  .animate-leaf-2,
-  .animate-leaf-3,
-  .animate-leaf-4,
-  .animate-leaf-sway,
-  .animate-sunlight {
-    animation: none !important;
-  }
+.animate-leaf-sway {
+  animation: leafSway 6s ease-in-out infinite;
+  transform-origin: top center;
 }
 
-/* Premium Product Card Hover */
-.product-card-premium {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+.animate-leaf-1 {
+  animation: leafFloat1 9s ease-in-out infinite;
 }
 
-.product-card-premium:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px -6px rgba(16, 88, 38, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+.animate-leaf-2 {
+  animation: leafFloat2 12s ease-in-out infinite;
 }
 
+.animate-leaf-3 {
+  animation: leafFloat3 10s ease-in-out infinite;
+}
+
+.animate-leaf-4 {
+  animation: leafFloat4 11s ease-in-out infinite;
+}

@@ -1,122 +1,108 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TopBar } from './components/TopBar';
 import { Marketplace } from './components/Marketplace';
 import { FarmerDashboard } from './components/FarmerDashboard';
 import { AdminVerification } from './components/AdminVerification';
 import { OrderTracking } from './components/OrderTracking';
-import { ProductDetailModal } from './components/ProductDetailModal';
-import { CartDrawer } from './components/CartDrawer';
-import { WishlistDrawer } from './components/WishlistDrawer';
 import { AuthModal } from './components/AuthModal';
 import { AdminPortalModal } from './components/AdminPortalModal';
+import { CartDrawer } from './components/CartDrawer';
+import { WishlistDrawer } from './components/WishlistDrawer';
+import { ProductDetailModal } from './components/ProductDetailModal';
 import { LeafyBackground } from './components/LeafyBackground';
 import { XivaLogo } from './components/XivaLogo';
 import { StorageService } from './services/storage';
-import { User, Product, CartItem, Order, LanguageCode, FarmerProfile, ProductCategory } from './types';
 import { translations } from './data/translations';
-import { CheckCircle2, Sprout } from 'lucide-react';
+import {
+  Product,
+  ProductCategory,
+  FarmerProfile,
+  Order,
+  CartItem,
+  LanguageCode,
+  User
+} from './types';
+import { ShieldCheck, Heart, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  const [currentCategory, setCurrentCategory] = useState<ProductCategory | 'all'>('all');
-  const [currentView, setCurrentView] = useState<'store' | 'farmer' | 'admin_verification' | 'orders'>('store');
-  const [user, setUser] = useState<User | null>(() => StorageService.getUser());
+  // Navigation & Category filter state
+  const [currentTab, setCurrentTab] = useState<'marketplace' | 'farmer' | 'admin' | 'orders'>('marketplace');
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<LanguageCode>(() => StorageService.getLanguage());
+
+  // Data state
   const [products, setProducts] = useState<Product[]>(() => StorageService.getProducts());
   const [farmers, setFarmers] = useState<FarmerProfile[]>(() => StorageService.getFarmers());
   const [orders, setOrders] = useState<Order[]>(() => StorageService.getOrders());
-  const [wishlistIds, setWishlistIds] = useState<string[]>(() => StorageService.getWishlist());
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Admin Session State (Strictly protected behind authentication)
+  // User & Admin session state (user is null if not explicitly logged in)
+  const [user, setUser] = useState<User | null>(() => StorageService.getUser());
   const [isAdmin, setIsAdmin] = useState<boolean>(() => StorageService.isAdminAuthenticated());
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
-  // Cart & Drawers
+  // Cart & Wishlist state
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<string[]>(() => StorageService.getWishlist());
+
+  // Modal / Drawer visibility
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
-
-  // Modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const t = translations[language];
 
-  // Refresh all state from localStorage
-  const refreshData = () => {
-    setProducts(StorageService.getProducts());
-    setFarmers(StorageService.getFarmers());
-    setOrders(StorageService.getOrders());
-    setUser(StorageService.getUser());
-    setWishlistIds(StorageService.getWishlist());
-  };
-
-  const handleLanguageChange = (lang: LanguageCode) => {
+  // Sync language changes
+  const handleSelectLanguage = (lang: LanguageCode) => {
     setLanguage(lang);
     StorageService.setLanguage(lang);
   };
 
-  // Wishlist toggle
-  const handleToggleWishlist = (productId: string) => {
-    StorageService.toggleWishlist(productId);
-    setWishlistIds(StorageService.getWishlist());
+  // Reload data from StorageService
+  const handleRefreshData = () => {
+    setProducts(StorageService.getProducts());
+    setFarmers(StorageService.getFarmers());
+    setOrders(StorageService.getOrders());
   };
 
-  // Cart operations
+  // Handle Tab navigation
+  const handleSelectTab = (tab: 'marketplace' | 'farmer' | 'admin' | 'orders') => {
+    if (tab === 'admin' && !isAdmin) {
+      setIsAdminPortalOpen(true);
+      return;
+    }
+    setCurrentTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Cart actions
   const handleAddToCart = (product: Product, quantity: number) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
+      const idx = prev.findIndex((item) => item.product.id === product.id);
+      if (idx !== -1) {
+        const updated = [...prev];
+        updated[idx] = {
+          ...updated[idx],
+          quantity: updated[idx].quantity + quantity
+        };
+        return updated;
       }
       return [...prev, { product, quantity }];
     });
-    setIsCartOpen(true);
   };
 
-  // Quick Reorder handler: Adds entire batch of items from a previous order into cart
-  const handleQuickReorder = (items: CartItem[]) => {
-    setCart((prev) => {
-      const nextCart = [...prev];
-      items.forEach((itemToReorder) => {
-        const idx = nextCart.findIndex((c) => c.product.id === itemToReorder.product.id);
-        if (idx > -1) {
-          nextCart[idx] = {
-            ...nextCart[idx],
-            quantity: nextCart[idx].quantity + itemToReorder.quantity
-          };
-        } else {
-          nextCart.push({
-            product: itemToReorder.product,
-            quantity: itemToReorder.quantity
-          });
-        }
-      });
-      return nextCart;
-    });
-    setIsCartOpen(true);
-  };
-
-  const handleUpdateQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      handleRemoveItem(productId);
+  const handleUpdateCartQuantity = (productId: string, qty: number) => {
+    if (qty <= 0) {
+      handleRemoveFromCart(productId);
       return;
     }
     setCart((prev) =>
-      prev.map((item) => (item.product.id === productId ? { ...item, quantity } : item))
+      prev.map((item) => (item.product.id === productId ? { ...item, quantity: qty } : item))
     );
   };
 
-  const handleRemoveItem = (productId: string) => {
+  const handleRemoveFromCart = (productId: string) => {
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
@@ -124,158 +110,289 @@ export default function App() {
     setCart([]);
   };
 
-  // Admin session operations
-  const handleAdminLoginSuccess = () => {
-    setIsAdmin(true);
-    setIsAdminModalOpen(true);
-    const adminUser: User = {
-      id: 'usr_varshak',
-      email: 'saivarshak14@gmail.com',
-      name: 'Sai Varshak',
-      role: 'admin',
-      phone: '+91 98480 22334',
-      address: 'Plot 42, Green Meadows Agri Hub, Shamirpet, Hyderabad Rural'
-    };
-    setUser(adminUser);
-    StorageService.setUser(adminUser);
+  const handleQuickReorder = (items: CartItem[]) => {
+    setCart((prev) => {
+      const updated = [...prev];
+      items.forEach((newItem) => {
+        const idx = updated.findIndex((i) => i.product.id === newItem.product.id);
+        if (idx !== -1) {
+          updated[idx].quantity += newItem.quantity;
+        } else {
+          updated.push(newItem);
+        }
+      });
+      return updated;
+    });
+    setIsCartOpen(true);
   };
 
-  const handleAdminLogout = () => {
-    StorageService.logoutAdmin();
+  // Wishlist actions
+  const handleToggleWishlist = (productId: string) => {
+    StorageService.toggleWishlist(productId);
+    setWishlistIds(StorageService.getWishlist());
+  };
+
+  // Auth actions
+  const handleLoginSuccess = (loggedInUser: User) => {
+    StorageService.setUser(loggedInUser);
+    setUser(loggedInUser);
+    setIsAuthModalOpen(false);
+  };
+
+  const handleLogoutUser = () => {
     StorageService.logoutUser();
-    setIsAdmin(false);
     setUser(null);
-    setIsAdminModalOpen(false);
-    if (currentView === 'admin_verification') {
-      setCurrentView('store');
+  };
+
+  // Admin actions
+  const handleAdminLoginSuccess = () => {
+    setIsAdmin(true);
+    setIsAdminPortalOpen(false);
+    setCurrentTab('admin');
+  };
+
+  const handleLogoutAdmin = () => {
+    StorageService.logoutAdmin();
+    setIsAdmin(false);
+    if (currentTab === 'admin') {
+      setCurrentTab('marketplace');
     }
   };
 
-  const handleUserLogout = () => {
-    StorageService.logoutAdmin();
-    StorageService.logoutUser();
-    setIsAdmin(false);
-    setUser(null);
-  };
-
-  // Farmer operations
-  const handleAddProduct = (newProduct: Product) => {
-    StorageService.addProduct(newProduct);
-    refreshData();
-  };
-
-  const handleUpdateStock = (productId: string, newStock: number) => {
-    StorageService.updateProductStock(productId, newStock);
-    refreshData();
-  };
-
+  // Order Placement
   const handleOrderSuccess = (order: Order) => {
-    refreshData();
-    setCurrentView('orders');
+    setOrders(StorageService.getOrders());
+    setProducts(StorageService.getProducts());
+    setCart([]);
+    setIsCartOpen(false);
+    setCurrentTab('orders');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const currentFarmerProfile = user
-    ? farmers.find(
-        (f) => f.id === user.farmId || f.email.toLowerCase() === user.email.toLowerCase()
-      ) || farmers[0]
-    : farmers[0];
+  // Farmer specific actions
+  const currentFarmer = farmers.find((f) => f.id === user?.farmId) || farmers[0];
+
+  const handleFarmerAddProduct = (newProduct: Product) => {
+    StorageService.addProduct(newProduct);
+    handleRefreshData();
+  };
+
+  const handleFarmerUpdateStock = (productId: string, newStock: number) => {
+    StorageService.updateProductStock(productId, newStock);
+    handleRefreshData();
+  };
+
+  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f7f9f6] font-sans text-stone-900 relative">
-      {/* Botanical Leafy Background Layer & Ambient Sunlight Animation */}
+    <div className="min-h-screen bg-stone-50 flex flex-col font-sans text-stone-900 relative selection:bg-emerald-200 selection:text-emerald-900">
+      {/* Botanical Background Animations */}
       <LeafyBackground />
 
-      {/* Top Bar with Xiva.Org Navigation */}
+      {/* Main Top Navigation Header */}
       <TopBar
-        currentTab={
-          currentView === 'store'
-            ? 'marketplace'
-            : currentView === 'farmer'
-            ? 'farmer'
-            : currentView === 'admin_verification'
-            ? 'admin'
-            : 'orders'
-        }
-        onSelectTab={(tab) => {
-          if (tab === 'marketplace') setCurrentView('store');
-          else if (tab === 'farmer') setCurrentView('farmer');
-          else if (tab === 'admin') setCurrentView('admin_verification');
-          else if (tab === 'orders') setCurrentView('orders');
-        }}
-        selectedCategory={currentCategory}
-        onSelectCategory={(cat) => {
-          setCurrentCategory(cat);
-          setCurrentView('store');
-        }}
-        cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        currentTab={currentTab}
+        onSelectTab={handleSelectTab}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        cartCount={totalCartCount}
         wishlistCount={wishlistIds.length}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenWishlist={() => setIsWishlistOpen(true)}
         user={user}
         isAdmin={isAdmin}
-        onOpenAuth={() => setIsAuthOpen(true)}
-        onOpenAdminLogin={() => setIsAdminModalOpen(true)}
-        onLogoutAdmin={handleAdminLogout}
-        onLogoutUser={handleUserLogout}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenAdminLogin={() => setIsAdminPortalOpen(true)}
+        onLogoutAdmin={handleLogoutAdmin}
+        onLogoutUser={handleLogoutUser}
         language={language}
-        onSelectLanguage={handleLanguageChange}
+        onSelectLanguage={handleSelectLanguage}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1">
-        {currentView === 'store' && (
+      {/* Primary Main Content View */}
+      <main className="flex-1 relative z-10">
+        {currentTab === 'marketplace' && (
           <Marketplace
             products={products}
-            currentCategory={currentCategory}
-            onSelectCategory={setCurrentCategory}
-            onSelectProduct={(p) => setSelectedProduct(p)}
+            currentCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            onSelectProduct={(prod) => setSelectedProduct(prod)}
             onAddToCart={handleAddToCart}
             onToggleWishlist={handleToggleWishlist}
             wishlistIds={wishlistIds}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             language={language}
-            onNavigateToFarmer={() => setCurrentView('farmer')}
+            onNavigateToFarmer={() => handleSelectTab('farmer')}
           />
         )}
 
-        {currentView === 'farmer' && (
+        {currentTab === 'farmer' && (
           <FarmerDashboard
             user={user}
-            farmer={currentFarmerProfile}
+            farmer={currentFarmer}
             products={products}
-            onAddProduct={handleAddProduct}
-            onUpdateStock={handleUpdateStock}
-            onRefreshData={refreshData}
+            onAddProduct={handleFarmerAddProduct}
+            onUpdateStock={handleFarmerUpdateStock}
+            onRefreshData={handleRefreshData}
             language={language}
           />
         )}
 
-        {currentView === 'admin_verification' && isAdmin && (
+        {currentTab === 'admin' && (
           <AdminVerification
             user={user}
             farmers={farmers}
-            onRefreshData={refreshData}
+            onRefreshData={handleRefreshData}
             language={language}
           />
         )}
 
-        {currentView === 'orders' && (
+        {currentTab === 'orders' && (
           <OrderTracking
             orders={orders}
             language={language}
-            onQuickReorder={handleQuickReorder}
-            onSelectProduct={(id) => {
-              const p = products.find((prod) => prod.id === id);
+            onSelectProduct={(prodId) => {
+              const p = products.find((prod) => prod.id === prodId);
               if (p) setSelectedProduct(p);
             }}
+            onQuickReorder={handleQuickReorder}
           />
         )}
       </main>
 
-      {/* Product Detail Modal & Verified Reviews */}
+      {/* Footer */}
+      <footer className="relative z-10 bg-[#064e3b] text-emerald-100 border-t border-emerald-800/60 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="space-y-4 md:col-span-2">
+              <div className="flex items-center gap-2">
+                <XivaLogo layout="horizontal" size="md" />
+              </div>
+              <p className="text-xs text-emerald-200/90 leading-relaxed max-w-md">
+                {t.footerSubtitle}
+              </p>
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>{t.footerDirect}</span>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-300 mb-3">
+                {language === 'te' ? 'వేదిక విభాగాలు' : language === 'hi' ? 'नेविगेशन' : 'Platform'}
+              </h4>
+              <ul className="space-y-2 text-xs text-emerald-200">
+                <li>
+                  <button
+                    onClick={() => handleSelectTab('marketplace')}
+                    className="hover:text-white transition-colors cursor-pointer"
+                  >
+                    {t.navMarketplace}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => handleSelectTab('farmer')}
+                    className="hover:text-white transition-colors cursor-pointer"
+                  >
+                    {t.navFarmerDashboard}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => handleSelectTab('orders')}
+                    className="hover:text-white transition-colors cursor-pointer"
+                  >
+                    {t.navOrders}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-300 mb-3">
+                {language === 'te' ? 'అధికారిక లాగిన్' : language === 'hi' ? 'प्रशासनिक लॉगिन' : 'Admin & Security'}
+              </h4>
+              <ul className="space-y-2 text-xs text-emerald-200">
+                <li>
+                  <button
+                    onClick={() => setIsAdminPortalOpen(true)}
+                    className="flex items-center gap-1.5 text-emerald-300 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{t.adminPortalTitle}</span>
+                  </button>
+                </li>
+                <li className="text-[11px] text-emerald-300/80">
+                  {t.adminPortalDesc}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-emerald-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-emerald-300/80 gap-3">
+            <div>
+              © 2026 Xiva.Org / KisanSetu Platform. {t.topTrustBar}
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-emerald-400" />
+                <span>NPOP / APEDA Organic Grounding</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Modals & Drawers */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={user}
+        onLoginSuccess={handleLoginSuccess}
+        language={language}
+      />
+
+      <AdminPortalModal
+        isOpen={isAdminPortalOpen}
+        onClose={() => setIsAdminPortalOpen(false)}
+        isAdmin={isAdmin}
+        onLoginSuccess={handleAdminLoginSuccess}
+        onLogout={handleLogoutAdmin}
+        products={products}
+        onRefreshProducts={handleRefreshData}
+        language={language}
+      />
+
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cart}
+        onUpdateQuantity={handleUpdateCartQuantity}
+        onRemoveItem={handleRemoveFromCart}
+        onClearCart={handleClearCart}
+        user={user}
+        language={language}
+        onOrderSuccess={handleOrderSuccess}
+      />
+
+      <WishlistDrawer
+        isOpen={isWishlistOpen}
+        onClose={() => setIsWishlistOpen(false)}
+        wishlistIds={wishlistIds}
+        products={products}
+        onRemoveFromWishlist={handleToggleWishlist}
+        onAddToCart={handleAddToCart}
+        onSelectProduct={(prod) => {
+          setIsWishlistOpen(false);
+          setSelectedProduct(prod);
+        }}
+        language={language}
+      />
+
       <ProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
@@ -284,146 +401,9 @@ export default function App() {
         language={language}
         onOpenOrders={() => {
           setSelectedProduct(null);
-          setCurrentView('orders');
+          handleSelectTab('orders');
         }}
       />
-
-      {/* Cart Drawer & Checkout */}
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        items={cart}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onClearCart={handleClearCart}
-        user={user}
-        language={language}
-        onOrderSuccess={handleOrderSuccess}
-      />
-
-      {/* Wishlist Drawer */}
-      <WishlistDrawer
-        isOpen={isWishlistOpen}
-        onClose={() => setIsWishlistOpen(false)}
-        wishlistIds={wishlistIds}
-        products={products}
-        onRemoveFromWishlist={handleToggleWishlist}
-        onAddToCart={handleAddToCart}
-        onSelectProduct={(p) => setSelectedProduct(p)}
-        language={language}
-      />
-
-      {/* Protected Admin Portal / Login Modal */}
-      <AdminPortalModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
-        isAdmin={isAdmin}
-        onLoginSuccess={handleAdminLoginSuccess}
-        onLogout={handleAdminLogout}
-        products={products}
-        onRefreshProducts={refreshData}
-        language={language}
-      />
-
-      {/* Customer Authentication Modal */}
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        currentUser={user}
-        onLoginSuccess={(u) => {
-          setUser(u);
-          StorageService.setUser(u);
-          setIsAdmin(StorageService.isAdminAuthenticated());
-        }}
-        language={language}
-      />
-
-      {/* Sophisticated Clean Footer */}
-      <footer className="border-t border-stone-200/80 bg-white/95 backdrop-blur-xs py-8 px-4 sm:px-6 lg:px-8 text-xs text-stone-500 relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
-            <XivaLogo layout="horizontal" size="sm" showSubtitle={true} subtitleText={t.tagline} />
-            <span className="hidden sm:inline text-stone-300">|</span>
-            <span className="text-stone-600 font-medium">
-              {t.footerSubtitle}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-stone-600 font-medium">
-            <button
-              onClick={() => {
-                setCurrentCategory('all');
-                setCurrentView('store');
-              }}
-              className="hover:text-emerald-800 transition-colors cursor-pointer"
-            >
-              {t.home}
-            </button>
-            <button
-              onClick={() => {
-                setCurrentCategory('cereals');
-                setCurrentView('store');
-              }}
-              className="hover:text-emerald-800 transition-colors cursor-pointer"
-            >
-              {t.cereals}
-            </button>
-            <button
-              onClick={() => {
-                setCurrentCategory('pulses');
-                setCurrentView('store');
-              }}
-              className="hover:text-emerald-800 transition-colors cursor-pointer"
-            >
-              {t.pulses}
-            </button>
-            <button
-              onClick={() => {
-                setCurrentCategory('vegetables');
-                setCurrentView('store');
-              }}
-              className="hover:text-emerald-800 transition-colors cursor-pointer"
-            >
-              {t.vegetables}
-            </button>
-            <button
-              onClick={() => {
-                setCurrentCategory('fruits');
-                setCurrentView('store');
-              }}
-              className="hover:text-emerald-800 transition-colors cursor-pointer"
-            >
-              {t.fruits}
-            </button>
-            <button
-              onClick={() => {
-                setCurrentCategory('spices');
-                setCurrentView('store');
-              }}
-              className="hover:text-emerald-800 transition-colors cursor-pointer"
-            >
-              {t.spices}
-            </button>
-            <button
-              onClick={() => {
-                setCurrentCategory('exotic');
-                setCurrentView('store');
-              }}
-              className="hover:text-emerald-800 transition-colors cursor-pointer"
-            >
-              {t.exotic}
-            </button>
-            <button
-              onClick={() => setCurrentView('orders')}
-              className="hover:text-emerald-800 transition-colors cursor-pointer"
-            >
-              {t.navOrders}
-            </button>
-            <span className="text-stone-300 hidden sm:inline">|</span>
-            <span className="text-emerald-800 font-bold">{t.footerDirect}</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
