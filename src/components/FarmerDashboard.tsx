@@ -220,47 +220,47 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 block">{t.estHarvestValue}</span>
-          <span className="text-xl font-bold text-stone-900 font-numeric mt-1 block">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs">
+          <span className="text-xs sm:text-sm text-stone-500 block">{t.estHarvestValue}</span>
+          <span className="text-2xl sm:text-3xl font-bold text-stone-900 font-numeric mt-1.5 block">
             ₹{estimatedHarvestValue.toLocaleString()}
           </span>
-          <span className="text-[10px] text-emerald-700 font-medium mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" />
+          <span className="text-xs text-emerald-700 font-medium mt-1.5 flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
             {t.directToFarmer}
           </span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 block">{t.totalActiveCrops}</span>
-          <span className="text-xl font-bold text-stone-900 font-numeric mt-1 block">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs">
+          <span className="text-xs sm:text-sm text-stone-500 block">{t.totalActiveCrops}</span>
+          <span className="text-2xl sm:text-3xl font-bold text-stone-900 font-numeric mt-1.5 block">
             {myProducts.length} {t.crops}
           </span>
-          <span className="text-[10px] text-stone-500 mt-1 block">
+          <span className="text-xs text-stone-500 mt-1.5 block">
             {totalStockKg} {t.stockReady}
           </span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 block">{t.avgCustomerRating}</span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-xl font-bold text-stone-900 font-numeric">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs">
+          <span className="text-xs sm:text-sm text-stone-500 block">{t.avgCustomerRating}</span>
+          <div className="flex items-baseline gap-1 mt-1.5">
+            <span className="text-2xl sm:text-3xl font-bold text-stone-900 font-numeric">
               ★ {averageRating}
             </span>
-            <span className="text-xs text-stone-500 font-numeric">({totalReviews} {t.reviews})</span>
+            <span className="text-xs sm:text-sm text-stone-500 font-numeric">({totalReviews} {t.reviews})</span>
           </div>
-          <span className="text-[10px] text-stone-500 mt-1 block">
+          <span className="text-xs text-stone-500 mt-1.5 block">
             {t.customerReviews}
           </span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs">
-          <span className="text-xs text-stone-500 block">{t.statCommission}</span>
-          <span className="text-xl font-bold text-emerald-800 font-numeric mt-1 block">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs">
+          <span className="text-xs sm:text-sm text-stone-500 block">{t.statCommission}</span>
+          <span className="text-2xl sm:text-3xl font-bold text-emerald-800 font-numeric mt-1.5 block">
             0% (FREE)
           </span>
-          <span className="text-[10px] text-stone-500 mt-1 block">
+          <span className="text-xs text-stone-500 mt-1.5 block">
             {t.zeroCommission}
           </span>
         </div>
@@ -454,29 +454,29 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
                 Uploaded & Verified Documents ({farmer?.documents.length || 0})
               </h4>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {farmer?.documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className="p-4 rounded-xl border border-stone-200 bg-stone-50/60 flex items-start justify-between gap-3"
+                    className="p-5 rounded-2xl border border-stone-200 bg-stone-50/70 flex items-start justify-between gap-3 shadow-2xs"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
                         <FileText className="w-5 h-5" />
                       </div>
-                      <div className="space-y-0.5">
-                        <span className="font-bold text-stone-900 text-xs block">{doc.title}</span>
-                        <span className="text-[11px] text-stone-500 block font-mono">
+                      <div className="space-y-1">
+                        <span className="font-bold text-stone-900 text-xs sm:text-sm block">{doc.title}</span>
+                        <span className="text-xs text-stone-500 block font-mono">
                           Doc Ref: {doc.documentNumber}
                         </span>
-                        <span className="text-[10px] text-stone-400 block">
+                        <span className="text-[11px] text-stone-400 block">
                           File: {doc.fileName} · {doc.fileSize} · Uploaded: {doc.uploadedAt}
                         </span>
                       </div>
                     </div>
 
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider ${
                         doc.status === 'valid'
                           ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-amber-100 text-amber-800'
@@ -495,7 +495,7 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
       {/* Tab Content: Analytics */}
       {activeTab === 'analytics' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl p-6 border border-stone-200 shadow-2xs space-y-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-7 border border-stone-200 shadow-2xs space-y-5">
             <h3 className="text-base font-bold text-stone-900 font-serif-display">
               Fair-Trade Economic Realization Report
             </h3>
@@ -503,33 +503,33 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({
               Comparative analysis showing traditional APMC Mandi middleman price vs. Direct Consumer Platform Earnings.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div className="p-4 rounded-xl bg-stone-50 border border-stone-200">
-                <span className="text-xs text-stone-500 block">Conventional Mandi Middleman Take</span>
-                <span className="text-2xl font-bold text-stone-800 font-numeric mt-1 block">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 shadow-2xs">
+                <span className="text-xs sm:text-sm text-stone-500 block">Conventional Mandi Middleman Take</span>
+                <span className="text-2xl sm:text-3xl font-bold text-stone-800 font-numeric mt-1.5 block">
                   35% - 42%
                 </span>
-                <p className="text-[11px] text-stone-500 mt-1">
+                <p className="text-xs text-stone-500 mt-1.5">
                   Commission agents, auction brokers, and wholesalers absorb almost half of consumer spend.
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-                <span className="text-xs text-emerald-800 font-bold block">KisanSetu Direct Platform</span>
-                <span className="text-2xl font-bold text-emerald-950 font-numeric mt-1 block">
+              <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 shadow-2xs">
+                <span className="text-xs sm:text-sm text-emerald-800 font-bold block">KisanSetu Direct Platform</span>
+                <span className="text-2xl sm:text-3xl font-bold text-emerald-950 font-numeric mt-1.5 block">
                   100% Direct Payout
                 </span>
-                <p className="text-[11px] text-emerald-800 mt-1">
+                <p className="text-xs text-emerald-800 mt-1.5">
                   Transferred via DBT or UPI instant settlement. Free for small-scale rural farms.
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-stone-50 border border-stone-200">
-                <span className="text-xs text-stone-500 block">Linked Bank Account / UPI</span>
-                <span className="text-sm font-bold text-stone-900 font-mono mt-1 block">
+              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 shadow-2xs">
+                <span className="text-xs sm:text-sm text-stone-500 block">Linked Bank Account / UPI</span>
+                <span className="text-sm sm:text-base font-bold text-stone-900 font-mono mt-1.5 block">
                   {farmer?.bankAccount.upiId || 'saivarshak14@oksbi'}
                 </span>
-                <p className="text-[11px] text-stone-500 mt-1">
+                <p className="text-xs text-stone-500 mt-1.5">
                   Direct settlement enabled after each daily delivery slot completion.
                 </p>
               </div>
