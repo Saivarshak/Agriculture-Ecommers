@@ -25,7 +25,10 @@ import {
   Copy,
   ExternalLink,
   Check,
-  Star
+  Star,
+  FolderTree,
+  Truck,
+  PackageCheck
 } from 'lucide-react';
 import {
   Product,
@@ -35,7 +38,9 @@ import {
   AdCard,
   SiteStructureConfig,
   MandiTickerItem,
-  TrustStatItem
+  TrustStatItem,
+  CategoryNode,
+  Order
 } from '../types';
 import { StorageService } from '../services/storage';
 import { translations } from '../data/translations';
@@ -58,6 +63,8 @@ interface AdminStudioProps {
   onLoginSuccess: () => void;
   onLogout: () => void;
   products: Product[];
+  categories?: CategoryNode[];
+  orders?: Order[];
   ads: AdCard[];
   siteStructure: SiteStructureConfig;
   farmers: FarmerProfile[];
@@ -71,6 +78,8 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
   onLoginSuccess,
   onLogout,
   products,
+  categories = [],
+  orders = [],
   ads,
   siteStructure,
   farmers,
@@ -81,14 +90,27 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
   const t = translations[language];
 
   // Admin login credentials state
-  const [email, setEmail] = useState('saivarshak14@gmail.com');
-  const [password, setPassword] = useState('1111');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Active studio tab
-  const [activeTab, setActiveTab] = useState<'cards' | 'ads' | 'structure' | 'farmers'>('cards');
+  const [activeTab, setActiveTab] = useState<'cards' | 'categories' | 'ads' | 'structure' | 'orders' | 'farmers'>('cards');
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Categories Hierarchy management state
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryNode | null>(null);
+  const [categoryLevelFilter, setCategoryLevelFilter] = useState<'all' | 0 | 1 | 2>('all');
+  const [newCategory, setNewCategory] = useState<Partial<CategoryNode>>({
+    name: '',
+    slug: '',
+    level: 1,
+    parentId: 'cereals',
+    description: '',
+    image: IMAGE_PRESETS[0].url
+  });
 
   // Produce Cards filters & state
   const [cardSearch, setCardSearch] = useState('');
@@ -368,6 +390,68 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
     }));
   };
 
+  // Category Management Handlers
+  const handleCreateCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategory.name?.trim()) return;
+
+    const id = newCategory.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    const slug = newCategory.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const cat: CategoryNode = {
+      id: id,
+      name: newCategory.name.trim(),
+      slug: slug,
+      level: newCategory.level ?? 1,
+      parentId: newCategory.level === 0 ? null : (newCategory.parentId || null),
+      description: newCategory.description?.trim(),
+      image: newCategory.image || IMAGE_PRESETS[0].url
+    };
+
+    StorageService.addCategory(cat);
+    onRefreshData();
+    setShowAddCategoryModal(false);
+    showToast(`Category "${cat.name}" added to database!`);
+    setNewCategory({
+      name: '',
+      slug: '',
+      level: 1,
+      parentId: 'cereals',
+      description: '',
+      image: IMAGE_PRESETS[0].url
+    });
+  };
+
+  const handleSaveCategoryEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory) return;
+    StorageService.updateCategory(editingCategory);
+    onRefreshData();
+    showToast(`Category "${editingCategory.name}" updated.`);
+    setEditingCategory(null);
+  };
+
+  const handleDeleteCategory = (cat: CategoryNode) => {
+    if (window.confirm(`Delete category "${cat.name}"? Any subcategories under it will also be removed.`)) {
+      StorageService.deleteCategory(cat.id);
+      onRefreshData();
+      showToast(`Category "${cat.name}" removed.`);
+    }
+  };
+
+  const handleResetCategories = () => {
+    if (window.confirm('Reset all categories to original verified agriculture hierarchy?')) {
+      StorageService.resetCategoriesToDefaults();
+      onRefreshData();
+      showToast('Category hierarchy reset to defaults.');
+    }
+  };
+
+  const handleUpdateOrderStatus = (orderId: string, status: Order['status']) => {
+    StorageService.updateOrderStatus(orderId, status);
+    onRefreshData();
+    showToast(`Order status updated to ${status}.`);
+  };
+
   // Filtered produce cards
   const filteredProducts = products.filter((p) => {
     if (cardCategoryFilter !== 'all' && p.category !== cardCategoryFilter) return false;
@@ -580,6 +664,18 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab('categories')}
+          className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            activeTab === 'categories'
+              ? 'bg-[#064e3b] text-white shadow-md'
+              : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+          }`}
+        >
+          <FolderTree className="w-4 h-4" />
+          <span>Category Hierarchy ({categories.length})</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('ads')}
           className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
             activeTab === 'ads'
@@ -601,6 +697,18 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
         >
           <Sliders className="w-4 h-4" />
           <span>Site Structure & Hero</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            activeTab === 'orders'
+              ? 'bg-[#064e3b] text-white shadow-md'
+              : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+          }`}
+        >
+          <Truck className="w-4 h-4" />
+          <span>Customer Orders ({orders.length})</span>
         </button>
 
         <button
@@ -750,6 +858,133 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* TAB: HIERARCHICAL CATEGORIES MANAGEMENT */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'categories' && (
+        <div className="space-y-6">
+          {/* Action Bar */}
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2.5 flex-1">
+              <span className="text-xs font-bold text-stone-700">Filter by Level:</span>
+              <select
+                value={categoryLevelFilter}
+                onChange={(e) => setCategoryLevelFilter(e.target.value === 'all' ? 'all' : Number(e.target.value) as 0 | 1 | 2)}
+                className="px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none cursor-pointer"
+              >
+                <option value="all">All Category Levels ({categories.length})</option>
+                <option value={0}>Level 0: Main Top Categories</option>
+                <option value={1}>Level 1: Subcategories</option>
+                <option value={2}>Level 2: Sub-subcategories</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={handleResetCategories}
+                className="px-3 py-2 text-xs font-semibold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors cursor-pointer"
+                title="Reset hierarchy to verified agriculture defaults"
+              >
+                Reset Hierarchy
+              </button>
+
+              <button
+                onClick={() => setShowAddCategoryModal(true)}
+                className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Category Node</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Categories Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {categories
+              .filter((c) => categoryLevelFilter === 'all' || c.level === categoryLevelFilter)
+              .map((cat) => {
+                const parentCat = cat.parentId ? categories.find((c) => c.id === cat.parentId) : null;
+                const cropCount = products.filter(
+                  (p) => p.category === cat.id || p.categoryId === cat.id || p.subcategoryId === cat.id || p.subSubcategoryId === cat.id
+                ).length;
+                const childCount = categories.filter((c) => c.parentId === cat.id).length;
+
+                return (
+                  <div
+                    key={cat.id}
+                    className="bg-white rounded-2xl border border-stone-200 p-4 shadow-xs flex flex-col justify-between space-y-3"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            cat.level === 0
+                              ? 'bg-emerald-100 text-emerald-900'
+                              : cat.level === 1
+                              ? 'bg-blue-100 text-blue-900'
+                              : 'bg-amber-100 text-amber-900'
+                          }`}
+                        >
+                          Level {cat.level} · {cat.level === 0 ? 'Main' : cat.level === 1 ? 'Sub' : 'Sub-sub'}
+                        </span>
+
+                        <span className="text-[10px] text-stone-400 font-mono">
+                          ID: {cat.id}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {cat.image && (
+                          <div className="w-10 h-10 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0">
+                            <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-bold text-stone-900 truncate">
+                            {cat.name}
+                          </h4>
+                          {parentCat && (
+                            <p className="text-[11px] text-emerald-700 truncate">
+                              Parent: <strong>{parentCat.name}</strong>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {cat.description && (
+                        <p className="text-xs text-stone-500 line-clamp-2">
+                          {cat.description}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-3 text-[11px] text-stone-500 pt-1 border-t border-stone-100">
+                        <span>Crops: <strong>{cropCount}</strong></span>
+                        {childCount > 0 && <span>Child Categories: <strong>{childCount}</strong></span>}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+                      <button
+                        onClick={() => setEditingCategory(cat)}
+                        className="px-2.5 py-1 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(cat)}
+                        className="p-1 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Category"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
@@ -1192,6 +1427,101 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* TAB: CUSTOMER ORDERS MANAGEMENT */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'orders' && (
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 space-y-6">
+          <div className="flex items-center justify-between border-b border-stone-100 pb-4">
+            <div>
+              <h2 className="text-lg font-bold text-stone-900">
+                Customer Orders & Real-time Delivery Status
+              </h2>
+              <p className="text-xs text-stone-500">
+                Manage harvest stages, cold-chain dispatches, and delivery status updates.
+              </p>
+            </div>
+            <span className="text-xs font-bold bg-emerald-100 text-emerald-900 px-3 py-1 rounded-full">
+              {orders.length} Active Orders
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {orders.length === 0 ? (
+              <div className="text-center py-10 text-stone-400 text-xs">
+                No orders placed yet. Placed customer orders will appear here for fulfilment.
+              </div>
+            ) : (
+              orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="p-5 rounded-2xl border border-stone-200 bg-stone-50 space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/80 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs text-stone-900">
+                          Order #{order.id}
+                        </span>
+                        <span className="text-[10px] text-stone-400">·</span>
+                        <span className="text-xs text-stone-600">{order.createdAt}</span>
+                      </div>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Customer: <strong className="text-stone-800">{order.consumerName}</strong> ({order.consumerEmail})
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-black text-stone-900 font-numeric">
+                        ₹{order.total}
+                      </span>
+                      <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded-full uppercase font-bold">
+                        {order.paymentMethod} ({order.paymentStatus})
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Items List */}
+                  <div className="text-xs text-stone-600 space-y-1">
+                    <span className="font-bold text-stone-700 block">Ordered Crops:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {order.items.map((item, idx) => (
+                        <span key={idx} className="bg-white px-2.5 py-1 rounded-lg border border-stone-200 text-[11px] font-medium">
+                          {item.product.name} × {item.quantity} {item.product.unit} (₹{item.product.price * item.quantity})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Delivery Info & Status Updater */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-stone-200/80">
+                    <div className="text-xs text-stone-500">
+                      <span>Destination: <strong>{order.delivery.address}, {order.delivery.city}</strong> · Slot: {order.delivery.slot}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-stone-700">Status:</span>
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value as Order['status'])}
+                        className="px-2.5 py-1.5 text-xs font-bold rounded-xl border border-stone-300 bg-white text-stone-800 focus:outline-none focus:border-emerald-600 cursor-pointer"
+                      >
+                        <option value="placed">Placed (Order Received)</option>
+                        <option value="confirmed">Confirmed (Farm Approved)</option>
+                        <option value="harvested">Harvested & Packed</option>
+                        <option value="transit_cold">In Cold-Chain Transit</option>
+                        <option value="out_for_delivery">Out for Delivery</option>
+                        <option value="delivered">Delivered to Doorstep</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -1845,6 +2175,209 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
                     Save Ad Changes
                   </button>
                 </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL 5: ADD NEW CATEGORY NODE */}
+      {/* ------------------------------------------------------------- */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <h3 className="text-lg font-bold text-stone-900 font-serif-display">
+                Add Hierarchical Category
+              </h3>
+              <button
+                onClick={() => setShowAddCategoryModal(false)}
+                className="text-stone-400 hover:text-stone-700 text-sm font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCategory} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Category Level *</label>
+                <select
+                  value={newCategory.level}
+                  onChange={(e) => {
+                    const lvl = Number(e.target.value) as 0 | 1 | 2;
+                    const defaultParent = lvl === 1 ? 'cereals' : lvl === 2 ? 'cereals_rice' : null;
+                    setNewCategory({ ...newCategory, level: lvl, parentId: defaultParent });
+                  }}
+                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl cursor-pointer"
+                >
+                  <option value={0}>Level 0: Main Top Category</option>
+                  <option value={1}>Level 1: Subcategory</option>
+                  <option value={2}>Level 2: Sub-subcategory</option>
+                </select>
+              </div>
+
+              {newCategory.level !== 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Parent Category *</label>
+                  <select
+                    value={newCategory.parentId || ''}
+                    onChange={(e) => setNewCategory({ ...newCategory, parentId: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl cursor-pointer"
+                  >
+                    {categories
+                      .filter((c) => c.level === (newCategory.level! - 1))
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} (Level {p.level})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Category Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Sona Masoori Raw Rice"
+                  value={newCategory.name}
+                  onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Natural, direct farm crop category description..."
+                  value={newCategory.description}
+                  onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Category Image URL</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategory.image}
+                    onChange={(e) => setNewCategory({ ...newCategory, image: e.target.value })}
+                    className="flex-1 px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl font-mono"
+                  />
+                  <select
+                    onChange={(e) => setNewCategory({ ...newCategory, image: e.target.value })}
+                    className="text-xs bg-stone-100 border border-stone-200 rounded-xl px-2 cursor-pointer"
+                  >
+                    <option value="">Preset</option>
+                    {IMAGE_PRESETS.map((img) => (
+                      <option key={img.url} value={img.url}>{img.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategoryModal(false)}
+                  className="px-4 py-2 text-xs text-stone-600 hover:text-stone-800 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Create Category Node
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL 6: EDIT CATEGORY NODE */}
+      {/* ------------------------------------------------------------- */}
+      {editingCategory && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-stone-900 font-serif-display">
+                  Edit Category: {editingCategory.name}
+                </h3>
+                <p className="text-xs text-stone-500">ID: {editingCategory.id} · Level {editingCategory.level}</p>
+              </div>
+              <button
+                onClick={() => setEditingCategory(null)}
+                className="text-stone-400 hover:text-stone-700 text-sm font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCategoryEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Category Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editingCategory.name}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Description</label>
+                <textarea
+                  rows={2}
+                  value={editingCategory.description || ''}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Category Image URL</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editingCategory.image || ''}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, image: e.target.value })}
+                    className="flex-1 px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl font-mono"
+                  />
+                  <select
+                    onChange={(e) => setEditingCategory({ ...editingCategory, image: e.target.value })}
+                    className="text-xs bg-stone-100 border border-stone-200 rounded-xl px-2 cursor-pointer"
+                  >
+                    <option value="">Preset</option>
+                    {IMAGE_PRESETS.map((img) => (
+                      <option key={img.url} value={img.url}>{img.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingCategory(null)}
+                  className="px-4 py-2 text-xs text-stone-600 hover:text-stone-800 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Save Category Changes
+                </button>
               </div>
             </form>
           </div>

@@ -12,6 +12,17 @@ export interface User {
 
 export type ProductCategory = 'cereals' | 'pulses' | 'vegetables' | 'fruits' | 'spices' | 'exotic';
 
+export interface CategoryNode {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  level: number; // 0 = main, 1 = sub, 2 = sub-sub
+  icon?: string;
+  image?: string;
+  description?: string;
+}
+
 export type VerificationStatus = 'pending' | 'verified' | 'rejected' | 'unsubmitted';
 
 export interface FarmerDoc {
@@ -74,6 +85,9 @@ export interface Product {
   farmerVerified: boolean;
   name: string;
   category: ProductCategory;
+  categoryId?: string;
+  subcategoryId?: string;
+  subSubcategoryId?: string;
   price: number;
   unit: string;
   stock: number;
@@ -88,6 +102,9 @@ export interface Product {
   rating: number;
   reviewCount: number;
   featured?: boolean;
+  originalPrice?: number;
+  discountPercent?: number;
+  badge?: string;
 }
 
 export interface CartItem {

@@ -5,27 +5,33 @@ import {
   MapPin,
   Clock,
   ShoppingBag,
-  TrendingUp,
   Search,
-  CheckCircle2,
   Sprout,
   ArrowRight,
   Heart,
   ArrowUpDown,
-  Plus,
-  Minus,
-  Sparkles,
-  Megaphone,
-  Tag,
-  Copy,
-  Check
+  Truck,
+  Headphones,
+  CheckCircle2,
+  Lock,
+  Leaf,
+  Edit2,
+  Plus
 } from 'lucide-react';
-import { Product, ProductCategory, LanguageCode, AdCard, SiteStructureConfig } from '../types';
+import { Product, ProductCategory, LanguageCode, AdCard, SiteStructureConfig, CategoryNode } from '../types';
 import { translations } from '../data/translations';
 import { getProductLocalized } from '../data/productTranslations';
+import { CategoryNavPanel } from './CategoryNavPanel';
+import { AdminCard } from './AdminCard';
+import { EditProductModal } from './EditProductModal';
+import { AdminProductManagerModal } from './AdminProductManagerModal';
+import { StorageService } from '../services/storage';
 
 export interface MarketplaceProps {
   products: Product[];
+  categories?: CategoryNode[];
+  selectedCategoryId?: string | null;
+  onSelectCategoryNode?: (catId: string | null) => void;
   ads?: AdCard[];
   siteStructure?: SiteStructureConfig;
   currentCategory: ProductCategory | 'all';
@@ -38,12 +44,19 @@ export interface MarketplaceProps {
   onSearchChange: (query: string) => void;
   language: LanguageCode;
   onNavigateToFarmer: () => void;
+  isAdmin?: boolean;
+  onLoginAsAdmin?: () => void;
+  onLogoutAdmin?: () => void;
+  onNavigateToAdmin?: () => void;
+  onRefreshProducts?: () => void;
+  onOpenAdminLogin?: () => void;
 }
 
 export const Marketplace: React.FC<MarketplaceProps> = ({
   products,
-  ads = [],
-  siteStructure,
+  categories = [],
+  selectedCategoryId = null,
+  onSelectCategoryNode,
   currentCategory,
   onSelectCategory,
   onSelectProduct,
@@ -53,39 +66,122 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
   searchQuery,
   onSearchChange,
   language,
-  onNavigateToFarmer
+  onNavigateToFarmer,
+  isAdmin = false,
+  onLoginAsAdmin,
+  onLogoutAdmin,
+  onNavigateToAdmin,
+  onRefreshProducts,
+  onOpenAdminLogin
 }) => {
   const t = translations[language];
 
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<'rating' | 'price_low' | 'price_high' | 'distance'>('rating');
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [addedNotice, setAddedNotice] = useState<string | null>(null);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'rating' | 'price_low' | 'price_high'>('rating');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isProductManagerOpen, setIsProductManagerOpen] = useState(false);
+  const [adminNotice, setAdminNotice] = useState<string | null>(null);
 
-  // Active ads filtered by placement
-  const activeSpotlightAds = useMemo(
-    () => ads.filter((a) => a.active && a.placement === 'hero_spotlight'),
-    [ads]
-  );
-  const activeGridAds = useMemo(
-    () => ads.filter((a) => a.active && a.placement === 'catalog_interstitial'),
-    [ads]
-  );
-
-  const handleCopyPromoCode = (e: React.MouseEvent, code: string) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2500);
+  const handleSaveProduct = (updated: Product) => {
+    StorageService.updateProduct(updated);
+    if (onRefreshProducts) {
+      onRefreshProducts();
+    }
+    setAdminNotice(`"${updated.name}" updated successfully!`);
+    setTimeout(() => setAdminNotice(null), 3500);
   };
 
-  // Filter products based on category, search, and verified filter
+  const handleDeleteProduct = (productId: string, productName: string) => {
+    if (window.confirm(`Are you sure you want to remove "${productName}" from the store catalog?`)) {
+      StorageService.deleteProduct(productId);
+      if (onRefreshProducts) {
+        onRefreshProducts();
+      }
+      setAdminNotice(`"${productName}" removed from store catalog.`);
+      setTimeout(() => setAdminNotice(null), 3500);
+    }
+  };
+
+  const handleAddNewProductModal = () => {
+    const blankProduct: Product = {
+      id: `prod_${Date.now()}`,
+      farmerId: 'farm_01',
+      farmerName: 'Verified Organic Producer',
+      farmerVillage: 'Mandya Valley',
+      farmerVerified: true,
+      name: '',
+      category: 'vegetables',
+      price: 50,
+      originalPrice: 60,
+      discountPercent: 16,
+      unit: 'kg',
+      stock: 100,
+      harvestTime: 'Fresh morning harvest',
+      harvestDate: new Date().toISOString().split('T')[0],
+      farmDistanceKm: 15,
+      organicCertification: 'NPOP Certified Organic',
+      image: '/src/assets/images/hero_farm_produce_spread_1791160693688.jpg',
+      description: 'Organically cultivated produce with natural compost and zero synthetic chemicals.',
+      nutrition: 'Rich in essential vitamins, dietary fibre and natural minerals.',
+      rating: 5.0,
+      reviewCount: 0,
+      badge: 'Organic'
+    };
+    setEditingProduct(blankProduct);
+  };
+
+  const handleQuickLoginAdmin = () => {
+    const success = StorageService.loginAdmin('saivarshak14@gmail.com', '1111');
+    if (success && onLoginAsAdmin) {
+      onLoginAsAdmin();
+    } else if (onOpenAdminLogin) {
+      onOpenAdminLogin();
+    }
+  };
+
+  // Active category handling
+  const activeCatId = selectedCategoryId || (currentCategory !== 'all' ? currentCategory : null);
+
+  const handleCategorySelect = (catId: string | null) => {
+    if (onSelectCategoryNode) {
+      onSelectCategoryNode(catId);
+    }
+    if (!catId || catId === 'all') {
+      onSelectCategory('all');
+    }
+  };
+
+  // Filter products based on selected category, search, and sort
   const filteredProducts = useMemo(() => {
     return products
       .filter((p) => {
-        if (currentCategory !== 'all' && p.category !== currentCategory) return false;
-        if (verifiedOnly && !p.farmerVerified) return false;
+        if (activeCatId) {
+          const lowerCat = activeCatId.toLowerCase();
+          const pName = p.name.toLowerCase();
+          const pCat = (p.category || '').toLowerCase();
+          const pDesc = (p.description || '').toLowerCase();
+
+          if (lowerCat === 'seeds') {
+            if (!pName.includes('seed') && !pName.includes('maize') && !pName.includes('paddy') && !pName.includes('wheat')) return false;
+          } else if (lowerCat === 'fertilizers') {
+            if (!pName.includes('fertilizer') && !pName.includes('urea') && !pName.includes('compost')) return false;
+          } else if (lowerCat === 'pesticides') {
+            if (!pName.includes('pesticide') && !pName.includes('neem') && !pDesc.includes('pesticide')) return false;
+          } else if (lowerCat === 'equipment') {
+            if (!pName.includes('tiller') && !pName.includes('equipment') && !pName.includes('tractor')) return false;
+          } else if (lowerCat === 'irrigation') {
+            if (!pName.includes('pump') && !pName.includes('irrigation') && !pName.includes('water')) return false;
+          } else if (lowerCat === 'tools') {
+            if (!pName.includes('tool') && !pName.includes('tiller')) return false;
+          } else if (lowerCat === 'animal_feed') {
+            if (!pName.includes('feed') && !pName.includes('oats') && !pName.includes('maize')) return false;
+          } else if (lowerCat === 'organic') {
+            if (!pName.includes('organic') && !p.organicCertification.toLowerCase().includes('organic')) return false;
+          } else {
+            // direct category match
+            if (pCat !== lowerCat && p.categoryId !== activeCatId) return false;
+          }
+        }
+
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const localized = getProductLocalized(p.id, p.name, p.category, language, p.description, p.unit);
@@ -103,593 +199,450 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
         if (sortBy === 'rating') return b.rating - a.rating;
         if (sortBy === 'price_low') return a.price - b.price;
         if (sortBy === 'price_high') return b.price - a.price;
-        if (sortBy === 'distance') return (a.farmDistanceKm || 99) - (b.farmDistanceKm || 99);
         return 0;
       });
-  }, [products, currentCategory, verifiedOnly, searchQuery, sortBy, language]);
+  }, [products, activeCatId, searchQuery, sortBy, language]);
 
-  // Categories dynamically translated from translations[language]
-  const categories: { id: ProductCategory | 'all'; label: string }[] = [
-    { id: 'all', label: t.allCrops },
-    { id: 'cereals', label: t.cereals },
-    { id: 'pulses', label: t.pulses },
-    { id: 'vegetables', label: t.vegetables },
-    { id: 'fruits', label: t.fruits },
-    { id: 'spices', label: t.spices },
-    { id: 'exotic', label: t.exotic }
-  ];
-
-  const handleQtyChange = (productId: string, delta: number) => {
-    setQuantities((prev) => {
-      const current = prev[productId] || 1;
-      const next = Math.max(1, current + delta);
-      return { ...prev, [productId]: next };
-    });
-  };
-
-  const handleAdd = (e: React.MouseEvent, product: Product) => {
-    e.stopPropagation();
-    const qty = quantities[product.id] || 1;
-    const localized = getProductLocalized(product.id, product.name, product.category, language, product.description, product.unit);
-    onAddToCart(product, qty);
-    setAddedNotice(`${t.addedToBasket}: ${qty} ${localized.unit} ${localized.name}`);
-    setTimeout(() => setAddedNotice(null), 2500);
+  // Color helper for badges matching screenshot
+  const getBadgeStyle = (badge?: string) => {
+    switch (badge) {
+      case 'Best Seller':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'Popular':
+        return 'bg-sky-100 text-sky-800 border-sky-200';
+      case 'Organic':
+        return 'bg-emerald-50 text-[#007a4d] border-emerald-300';
+      case 'Heavy Duty':
+        return 'bg-teal-100 text-teal-800 border-teal-200';
+      case 'Eco Friendly':
+        return 'bg-lime-100 text-lime-800 border-lime-200';
+      case 'Top Rated':
+        return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      default:
+        return 'bg-stone-100 text-stone-700 border-stone-200';
+    }
   };
 
   return (
-    <div className="space-y-8 pb-16 relative z-10 animate-fadeIn">
-      {/* 1. Main Hero Section */}
-      <section className="relative overflow-hidden w-full bg-stone-900 border-b border-stone-200">
-        <div className="relative min-h-[500px] lg:min-h-[620px] w-full flex items-center">
-          {/* Lush Agricultural Farmland Image */}
-          <img
-            src={siteStructure?.heroBgImage || '/src/assets/images/hero_organic_farm_fresh_1791021810264.jpg'}
-            alt="Organic farmland at sunrise"
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover object-center scale-105"
+    <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 py-5 flex flex-col gap-6 relative z-10 animate-fadeIn">
+      {/* ========================================================================= */}
+      {/* TOP SECTION: 3-COLUMN GRID (Category Menu + Center Hero Banner + Features) */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        {/* COLUMN 1 (Desktop: 3 cols): "Shop by Category" Vertical Menu */}
+        <div className="lg:col-span-3 flex flex-col">
+          <CategoryNavPanel
+            categories={categories}
+            activeCategoryId={activeCatId}
+            onSelectCategory={handleCategorySelect}
+            products={products}
+            language={language}
+            className="h-full flex-1"
           />
+        </div>
 
-          {/* Natural Green & Golden Sunlight Contrast Scrim */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#04200f]/95 via-[#063b19]/80 to-stone-900/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#021308]/90 via-transparent to-black/30" />
+        {/* COLUMN 2 (Desktop: 6 cols): Main Hero Banner with Poster Background */}
+        <div className="lg:col-span-6 flex flex-col">
+          <div className="relative rounded-2xl overflow-hidden bg-stone-900 border border-stone-200 shadow-sm flex-1 min-h-[380px] lg:min-h-[420px] flex items-center p-6 sm:p-10">
+            {/* Full Poster Image Background */}
+            <img
+              src="/src/assets/images/xiva_farm_poster_1791974208276.jpg"
+              alt="Fresh from Farmers to Your Home - AgriShop / Xiva.Org"
+              referrerPolicy="no-referrer"
+              className="absolute inset-0 w-full h-full object-cover object-center"
+            />
 
-          {/* Hero Content */}
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
-            <div className="max-w-3xl space-y-5">
-              {/* Trust Badge */}
-              <div className="inline-flex items-center gap-1.5 bg-emerald-900/80 backdrop-blur-md border border-emerald-400/40 text-emerald-200 text-[11px] font-semibold px-3 py-1 rounded-full shadow-xs">
-                <Sprout className="w-3 h-3 text-emerald-300" />
-                <span>{siteStructure?.heroBadge || t.heroBadge}</span>
-              </div>
+            {/* Subtle Gradient Scrim on Left so text is crisp and readable */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent sm:max-w-xl" />
 
-              {/* Main Headline - Enlarged Hero Visibility */}
-              <div className="space-y-1.5">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white font-serif-display tracking-tight leading-[1.1]">
-                  {siteStructure?.heroTitle || t.heroMainTitle}
-                </h1>
-                <p className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-emerald-300 font-serif-display leading-tight">
-                  {siteStructure?.heroSubtitle || t.heroSubTitle}
-                </p>
-              </div>
-
-              {/* Subtitle */}
-              <p className="text-sm sm:text-base text-stone-200 leading-relaxed max-w-xl text-balance">
-                {siteStructure?.heroDescription || t.heroDescription}
+            {/* Banner Text Content */}
+            <div className="relative z-10 space-y-3 max-w-md text-white">
+              {/* Green Sub-heading */}
+              <p className="text-[11px] sm:text-xs font-black tracking-widest uppercase text-emerald-300 flex items-center gap-1.5">
+                <span>QUALITY INPUTS • HIGHER YIELDS</span>
               </p>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              {/* Headline */}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-white drop-shadow-sm font-sans">
+                Everything Your Farm Needs, In One Place
+              </h1>
+
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-emerald-50 leading-relaxed font-medium">
+                Premium seeds, quality fertilizers, crop protection and more — for a healthier harvest.
+              </p>
+
+              {/* Call to action button */}
+              <div className="pt-2">
                 <a
-                  href="#crops-catalog"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm py-2.5 px-5 rounded-xl transition-all shadow-md hover:shadow-emerald-900/30 flex items-center gap-1.5 group cursor-pointer"
+                  href="#featured-catalog"
+                  className="inline-flex items-center gap-2 bg-[#007a4d] hover:bg-[#006841] active:bg-[#005736] text-white font-bold text-xs sm:text-sm py-2.5 px-5 rounded-xl transition-all shadow-md cursor-pointer group"
                 >
-                  <span>{siteStructure?.heroCtaExploreText || t.heroCtaExplore}</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  <span>Explore Categories</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
-
-                <button
-                  onClick={onNavigateToFarmer}
-                  className="bg-black/30 hover:bg-black/50 text-white font-semibold text-xs sm:text-sm py-2.5 px-5 rounded-xl border border-white/60 backdrop-blur-xs transition-all cursor-pointer"
-                >
-                  {siteStructure?.heroCtaFarmerText || t.heroCtaFarmer}
-                </button>
-              </div>
-
-              {/* Key Trust Stats Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-emerald-800/60 text-white text-xs max-w-xl">
-                {siteStructure?.trustStats?.length ? (
-                  siteStructure.trustStats.map((stat) => (
-                    <div key={stat.id}>
-                      <span className="block font-black text-xl lg:text-2xl text-emerald-300">
-                        {stat.value}
-                      </span>
-                      <span className="text-stone-300 text-[10px] sm:text-[11px]">{stat.label}</span>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div>
-                      <span className="block font-black text-xl lg:text-2xl text-emerald-300">0%</span>
-                      <span className="text-stone-300 text-[10px] sm:text-[11px]">{t.statCommission}</span>
-                    </div>
-                    <div>
-                      <span className="block font-black text-xl lg:text-2xl text-emerald-300">100%</span>
-                      <span className="text-stone-300 text-[10px] sm:text-[11px]">{t.statDirect}</span>
-                    </div>
-                    <div>
-                      <span className="block font-black text-xl lg:text-2xl text-emerald-300">24h</span>
-                      <span className="text-stone-300 text-[10px] sm:text-[11px]">{t.statGateToHome}</span>
-                    </div>
-                    <div>
-                      <span className="block font-black text-xl lg:text-2xl text-emerald-300">Govt</span>
-                      <span className="text-stone-300 text-[10px] sm:text-[11px]">{t.statVerifiedFarms}</span>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* APMC Mandi Price Ticker (Farmer Earnings vs Retail Margin) */}
-        {(siteStructure?.mandiTickerEnabled ?? true) && (
-          <div className="bg-[#031d0d] text-emerald-100 text-[11px] py-2 px-4 sm:px-6 lg:px-8 border-t border-emerald-900/80">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-              <div className="flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span className="font-bold text-white text-xs">
-                  {siteStructure?.mandiTickerTitle || t.mandiTickerTitle}:
-                </span>
-                <span className="text-stone-300 hidden md:inline text-[11px]">
-                  {siteStructure?.mandiTickerDesc || t.mandiTickerDesc}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 text-[10px] sm:text-[11px] text-emerald-300 overflow-x-auto">
-                {siteStructure?.mandiTickerItems?.length ? (
-                  siteStructure.mandiTickerItems.map((item) => (
-                    <span key={item.id} className="whitespace-nowrap font-medium">
-                      <strong>{item.name}:</strong> {item.price}
-                    </span>
-                  ))
-                ) : (
-                  <>
-                    <span>{t.tickerPaddy}</span>
-                    <span className="hidden sm:inline">{t.tickerTomato}</span>
-                    <span>{t.tickerMango}</span>
-                  </>
-                )}
-              </div>
+        {/* COLUMN 3 (Desktop: 3 cols): Admin Card + Trust Feature Cards + Bottom Promo */}
+        <div className="lg:col-span-3 flex flex-col gap-2.5">
+          {/* Admin Card */}
+          <AdminCard
+            isAdmin={isAdmin}
+            onLoginAsAdmin={handleQuickLoginAdmin}
+            onLogoutAdmin={onLogoutAdmin || (() => {})}
+            onOpenProductManager={() => setIsProductManagerOpen(true)}
+            onAddNewProduct={handleAddNewProductModal}
+            onNavigateToAdminStudio={onNavigateToAdmin || (() => {})}
+            totalProductsCount={products.length}
+          />
+
+          {/* 1. Free Delivery */}
+          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#007a4d] flex items-center justify-center shrink-0">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-stone-900 leading-tight">Free Delivery</h4>
+              <p className="text-xs text-stone-500 mt-0.5">On orders above ₹999</p>
             </div>
           </div>
-        )}
-      </section>
 
-      {/* Spotlight Ad Banner Cards (if configured by Admin) */}
-      {activeSpotlightAds.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-4">
-            {activeSpotlightAds.map((ad) => (
-              <div
-                key={ad.id}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#047857] text-white p-6 sm:p-8 shadow-xl border border-emerald-500/30 flex flex-col md:flex-row items-center justify-between gap-6 group"
-              >
-                {/* Background Artwork */}
-                <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-20 pointer-events-none overflow-hidden">
-                  <img
-                    src={ad.image}
-                    alt={ad.title}
-                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
-
-                <div className="relative z-10 space-y-2 max-w-2xl">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-amber-400 text-amber-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                      <Megaphone className="w-3 h-3 text-amber-950" />
-                      {ad.badge}
-                    </span>
-                    {ad.discountText && (
-                      <span className="bg-emerald-950/80 border border-emerald-400/40 text-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded-full">
-                        {ad.discountText}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-2xl sm:text-3xl font-black font-serif-display tracking-tight text-white leading-tight">
-                    {ad.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
-                    {ad.subtitle}
-                  </p>
-                </div>
-
-                <div className="relative z-10 flex flex-col sm:flex-row items-center gap-3 shrink-0">
-                  {ad.code && (
-                    <button
-                      onClick={(e) => handleCopyPromoCode(e, ad.code!)}
-                      className="bg-emerald-950/70 hover:bg-emerald-950 border border-emerald-400/50 px-3.5 py-2 rounded-xl text-xs font-mono font-bold text-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-                      title="Click to copy coupon code"
-                    >
-                      <span>Code: <strong>{ad.code}</strong></span>
-                      {copiedCode === ad.code ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-300" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 text-emerald-400" />
-                      )}
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => {
-                      if (ad.ctaCategory && ad.ctaCategory !== 'all') {
-                        onSelectCategory(ad.ctaCategory);
-                      }
-                      const el = document.getElementById('crops-catalog');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="bg-white hover:bg-emerald-50 text-emerald-900 font-black text-xs sm:text-sm py-2.5 px-5 rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>{ad.ctaText}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-emerald-800" />
-                  </button>
-                </div>
-              </div>
-            ))}
+          {/* 2. Secure Payments */}
+          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#007a4d] flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-stone-900 leading-tight">Secure Payments</h4>
+              <p className="text-xs text-stone-500 mt-0.5">100% Safe & Encrypted</p>
+            </div>
           </div>
-        </section>
+
+          {/* 3. Quality Products */}
+          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#007a4d] flex items-center justify-center shrink-0">
+              <Leaf className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-stone-900 leading-tight">Quality Products</h4>
+              <p className="text-xs text-stone-500 mt-0.5">Trusted by Farmers</p>
+            </div>
+          </div>
+
+          {/* 4. 24/7 Support */}
+          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#007a4d] flex items-center justify-center shrink-0">
+              <Headphones className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-stone-900 leading-tight">24/7 Support</h4>
+              <p className="text-xs text-stone-500 mt-0.5">We're here to help</p>
+            </div>
+          </div>
+
+          {/* 5. Bottom Promo Card: Better Farming for a Brighter Future */}
+          <div className="bg-[#eaf7f0] rounded-2xl p-4 border border-emerald-200/80 shadow-xs flex-1 flex flex-col justify-between relative overflow-hidden min-h-[110px]">
+            <div className="relative z-10 space-y-1 max-w-[65%]">
+              <div className="flex items-center gap-1.5 text-[#007a4d] mb-1">
+                <Leaf className="w-4 h-4" />
+              </div>
+              <h4 className="text-sm font-extrabold text-stone-900 leading-snug">
+                Better Farming for a Brighter Future
+              </h4>
+              <p className="text-[11px] text-stone-600 leading-normal">
+                Sustainable solutions for modern agriculture.
+              </p>
+            </div>
+
+            {/* Embedded Landscape Image */}
+            <img
+              src="/src/assets/images/sustainable_farming_promo_1791974229133.jpg"
+              alt="Farmer in organic field"
+              className="absolute right-0 bottom-0 top-0 w-36 h-full object-cover object-center rounded-r-2xl"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Admin Live Feedback Toast */}
+      {adminNotice && (
+        <div className="bg-emerald-800 text-white px-5 py-3 rounded-2xl shadow-lg border border-emerald-600 flex items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5 text-emerald-300 shrink-0" />
+            <span className="text-xs sm:text-sm font-bold">{adminNotice}</span>
+          </div>
+          <button
+            onClick={() => setAdminNotice(null)}
+            className="text-emerald-200 hover:text-white p-1 cursor-pointer"
+          >
+            ×
+          </button>
+        </div>
       )}
 
-      {/* 2. Main Catalog Section */}
-      <section id="crops-catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
-          {categories.map((cat) => {
-            const isSelected = currentCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => onSelectCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all shrink-0 cursor-pointer ${
-                  isSelected
-                    ? 'bg-emerald-800 text-white shadow-sm shadow-emerald-900/20'
-                    : 'bg-white hover:bg-stone-100 text-stone-700 border border-stone-200'
-                }`}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
+      {/* Admin Mode Top Banner */}
+      {isAdmin && (
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-stone-900 text-white rounded-2xl p-3.5 sm:p-4 border border-emerald-600/80 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-black text-white">
+                  Administrator Live Edit Mode
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+              <p className="text-xs text-emerald-200/90 mt-0.5">
+                Hover or view any product below to update its name, price, stock, discount, or badge directly.
+              </p>
+            </div>
+          </div>
 
-        {/* Filter and Sorting Controls */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-2.5 sm:px-3 rounded-xl border border-stone-200 shadow-xs">
-          {/* Left: Verified Only Toggle & Count */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap w-full md:w-auto">
             <button
-              onClick={() => setVerifiedOnly(!verifiedOnly)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer border ${
-                verifiedOnly
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                  : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
-              }`}
+              onClick={() => setIsProductManagerOpen(true)}
+              className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-bold text-xs py-2 px-3.5 rounded-xl transition-colors shadow-xs cursor-pointer"
             >
-              <ShieldCheck className={`w-3 h-3 ${verifiedOnly ? 'text-emerald-700' : 'text-stone-400'}`} />
-              <span>{t.filterVerifiedOnly}</span>
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Catalog Editor ({products.length})</span>
             </button>
-
-            <span className="text-[11px] text-stone-500 font-medium">
-              {t.showing} <strong className="text-stone-900 font-bold">{filteredProducts.length}</strong> {t.crops}
-            </span>
-          </div>
-
-          {/* Right: Search + Sort By */}
-          <div className="flex items-center gap-2">
-            {/* Mobile search bar if desktop search hidden */}
-            <div className="relative md:hidden flex-1">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={t.searchPlaceholder}
-                className="w-full bg-stone-50 text-[11px] rounded-md pl-6 pr-2 py-1 border border-stone-200 focus:outline-none focus:border-emerald-600"
-              />
-              <Search className="w-2.5 h-2.5 text-stone-400 absolute left-2 top-2" />
-            </div>
-
-            {/* Sort Selector */}
-            <div className="flex items-center gap-1 text-[11px] text-stone-600 shrink-0">
-              <ArrowUpDown className="w-3 h-3 text-stone-400" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                aria-label={t.sortBy}
-                className="bg-stone-50 border border-stone-200 text-stone-800 text-[11px] rounded-md px-2 py-1 focus:outline-none focus:border-emerald-600 cursor-pointer font-medium"
-              >
-                <option value="rating">{t.sortHighestRated}</option>
-                <option value="price_low">{t.sortPriceLowHigh}</option>
-                <option value="price_high">{t.sortPriceHighLow}</option>
-                <option value="distance">{t.sortDistance}</option>
-              </select>
-            </div>
+            <button
+              onClick={handleAddNewProductModal}
+              className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs py-2 px-3.5 rounded-xl border border-white/20 transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-emerald-300" />
+              <span>New Crop</span>
+            </button>
+            <button
+              onClick={onNavigateToAdmin}
+              className="inline-flex items-center justify-center gap-1 text-emerald-300 hover:text-white font-bold text-xs py-2 px-3 cursor-pointer transition-colors"
+            >
+              <span>Admin Studio Section →</span>
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Added to Cart Notification Toast */}
-        {addedNotice && (
-          <div className="bg-emerald-800 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs flex items-center justify-between animate-fadeIn">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-              <span className="font-semibold">{addedNotice}</span>
+      {/* ========================================================================= */}
+      {/* SECTION 2: FEATURED PRODUCTS (Header + 6-Column Card Grid)                 */}
+      {/* ========================================================================= */}
+      <section id="featured-catalog" className="space-y-4 pt-2">
+        {/* Section Header matching Image 1 */}
+        <div className="flex items-center justify-between pb-1">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-[#007a4d] flex items-center justify-center shrink-0">
+              <Leaf className="w-4.5 h-4.5" />
             </div>
+            <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+              Featured Products
+            </h2>
           </div>
-        )}
 
-        {/* 3. Produce Grid */}
+          <button
+            onClick={() => handleCategorySelect(null)}
+            className="text-sm font-semibold text-[#007a4d] hover:text-[#005c3a] hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>View All Products</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Product Cards Grid: 6 columns on large screens */}
         {filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 max-w-lg mx-auto space-y-3">
-            <Sprout className="w-10 h-10 text-emerald-600 mx-auto opacity-60" />
-            <h3 className="text-base font-bold text-stone-900 font-serif-display">{t.noCropsFound}</h3>
+          <div className="bg-white rounded-3xl p-10 text-center border border-stone-200 max-w-md mx-auto space-y-3">
+            <Sprout className="w-12 h-12 text-[#007a4d] mx-auto opacity-70" />
+            <h3 className="text-lg font-bold text-stone-900">No items found</h3>
             <p className="text-xs text-stone-500">
-              {t.noCropsFoundDesc}
+              No products found in this category. Try resetting the category filter.
             </p>
             <button
               onClick={() => {
-                onSelectCategory('all');
+                handleCategorySelect(null);
                 onSearchChange('');
-                setVerifiedOnly(false);
               }}
-              className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 px-4 rounded-lg transition-colors cursor-pointer"
+              className="bg-[#007a4d] hover:bg-[#006841] text-white font-bold text-xs py-2 px-4 rounded-xl transition-colors cursor-pointer"
             >
-              {t.resetFilters}
+              Reset Filters
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 lg:gap-8">
-            {filteredProducts.map((product, index) => {
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+            {filteredProducts.map((product) => {
               const isWishlisted = wishlistIds.includes(product.id);
-              const qty = quantities[product.id] || 1;
-              const localized = getProductLocalized(product.id, product.name, product.category, language, product.description, product.unit);
+              const localized = getProductLocalized(
+                product.id,
+                product.name,
+                product.category,
+                language,
+                product.description,
+                product.unit
+              );
 
-              // Check if we should insert an in-grid ad card
-              const shouldShowAd = activeGridAds.length > 0 && (index === 2 || (index > 2 && (index - 2) % 6 === 0));
-              const adToDisplay = shouldShowAd
-                ? activeGridAds[Math.floor(index / 6) % activeGridAds.length]
-                : null;
+              // Calculate discount percent and strikethrough price if not present
+              const origPrice = product.originalPrice || Math.round(product.price * 1.15);
+              const discPct =
+                product.discountPercent || Math.max(5, Math.round(((origPrice - product.price) / origPrice) * 100));
+              const badgeLabel = product.badge || (product.farmerVerified ? 'Organic' : 'Top Rated');
 
               return (
-                <React.Fragment key={product.id}>
-                  <div
-                    onClick={() => onSelectProduct(product)}
-                    className="group bg-white rounded-2xl border border-stone-200/90 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-200 hover:border-emerald-500/50 flex flex-col cursor-pointer relative"
-                  >
-                    {/* Top Produce Image Container */}
-                    <div className="relative aspect-[16/11] sm:aspect-[4/3] bg-stone-100 overflow-hidden">
-                      <img
-                        src={product.image}
-                        alt={localized.name}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-
-                      {/* Verified Farmer Badge */}
-                      {product.farmerVerified && (
-                        <div className="absolute top-3 left-3 bg-emerald-900/90 backdrop-blur-xs text-emerald-200 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-xs border border-emerald-700">
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-                          <span>{t.farmerBadge}</span>
-                        </div>
+                <div
+                  key={product.id}
+                  onClick={() => onSelectProduct(product)}
+                  className="group bg-white rounded-2xl border border-stone-200 hover:border-emerald-500/40 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between p-3 sm:p-4 cursor-pointer relative"
+                >
+                  {/* Top: Wishlist Heart Button & Admin Edit Badge */}
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${getBadgeStyle(badgeLabel)}`}
+                      >
+                        {badgeLabel}
+                      </span>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProduct(product);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-[10px] font-bold cursor-pointer transition-colors shadow-xs"
+                          title="Admin: Edit this product"
+                        >
+                          <Edit2 className="w-2.5 h-2.5" />
+                          <span>Edit</span>
+                        </button>
                       )}
+                    </div>
 
-                      {/* Wishlist Heart Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleWishlist(product.id);
+                      }}
+                      className="w-7 h-7 rounded-full bg-stone-50 hover:bg-rose-50 text-stone-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                      aria-label="Wishlist toggle"
+                    >
+                      <Heart
+                        className={`w-4 h-4 ${isWishlisted ? 'fill-rose-600 text-rose-600' : 'text-stone-400'}`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Product Image (Centered on clean white) */}
+                  <div className="relative aspect-square w-full my-2 flex items-center justify-center overflow-hidden rounded-xl bg-stone-50/50">
+                    <img
+                      src={product.image}
+                      alt={localized.name}
+                      referrerPolicy="no-referrer"
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="space-y-2 mt-auto">
+                    {/* Title */}
+                    <h3 className="text-sm font-bold text-stone-900 group-hover:text-[#007a4d] transition-colors line-clamp-1">
+                      {localized.name}
+                    </h3>
+
+                    {/* Star Rating & Review Count */}
+                    <div className="flex items-center text-xs text-stone-500">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                      <span className="font-bold text-stone-800 ml-1">
+                        {product.rating.toFixed(1)}
+                      </span>
+                      <span className="text-stone-400 ml-1">
+                        ({product.reviewCount || 45})
+                      </span>
+                    </div>
+
+                    {/* Price Row: Current, Strikethrough, Discount % */}
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="text-base sm:text-lg font-black text-stone-900 font-numeric">
+                        ₹{product.price.toLocaleString('en-IN')}
+                      </span>
+                      {origPrice > product.price && (
+                        <span className="text-xs text-stone-400 line-through font-numeric">
+                          ₹{origPrice.toLocaleString('en-IN')}
+                        </span>
+                      )}
+                      {discPct > 0 && (
+                        <span className="text-[11px] font-bold text-[#007a4d]">
+                          {discPct}% OFF
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Action Buttons: If admin, show both Edit and Add to Cart */}
+                    {isAdmin ? (
+                      <div className="grid grid-cols-2 gap-1.5 mt-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProduct(product);
+                          }}
+                          className="flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs py-2 px-2 rounded-xl transition-colors shadow-xs cursor-pointer"
+                          title="Admin: Edit product"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddToCart(product, 1);
+                          }}
+                          className="w-full bg-[#007a4d] hover:bg-[#006841] text-white font-semibold text-xs py-2 px-2 rounded-xl transition-colors text-center shadow-xs cursor-pointer"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onToggleWishlist(product.id);
+                          onAddToCart(product, 1);
                         }}
-                        className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur-xs hover:bg-white text-stone-600 hover:text-rose-600 flex items-center justify-center transition-colors shadow-sm cursor-pointer"
-                        title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                        aria-label="Wishlist toggle"
+                        className="w-full bg-[#007a4d] hover:bg-[#006841] active:bg-[#005736] text-white font-semibold text-xs sm:text-sm py-2 px-3 rounded-xl transition-colors text-center shadow-xs cursor-pointer mt-1"
                       >
-                        <Heart
-                          className={`w-4.5 h-4.5 ${
-                            isWishlisted ? 'fill-rose-600 text-rose-600' : 'text-stone-600'
-                          }`}
-                        />
+                        Add to Cart
                       </button>
-
-                      {/* Distance & Freshness Overlay */}
-                      <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-xs text-white font-medium bg-black/65 backdrop-blur-xs px-3 py-1.5 rounded-lg">
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3 text-emerald-300" />
-                          <span>{product.farmDistanceKm || 20} {t.away}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-emerald-200">
-                          <Clock className="w-3 h-3" />
-                          <span>{product.harvestTime || t.freshBatch}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Product Details Body */}
-                    <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
-                      <div className="space-y-2">
-                        {/* Farmer Name & Village */}
-                        <div className="flex items-center justify-between text-xs sm:text-[13px] text-stone-500">
-                          <span className="font-semibold text-emerald-800 truncate max-w-[190px]">
-                            {product.farmerName}
-                          </span>
-                          <span className="text-stone-400 truncate max-w-[140px]">
-                            {product.farmerVillage.split(',')[0]}
-                          </span>
-                        </div>
-
-                        {/* Product Name */}
-                        <h4 className="text-lg sm:text-xl font-bold text-stone-900 group-hover:text-emerald-800 transition-colors line-clamp-1 font-serif-display">
-                          {localized.name}
-                        </h4>
-
-                        {/* Star Rating & Review Count */}
-                        <div className="flex items-center gap-2 text-xs sm:text-sm">
-                          <div className="flex items-center text-amber-500">
-                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                            <span className="font-bold text-stone-800 ml-1">{product.rating.toFixed(1)}</span>
-                          </div>
-                          <span className="text-stone-400 text-xs">
-                            ({product.reviewCount || 18} {t.reviews})
-                          </span>
-                          <span className="text-stone-300">·</span>
-                          <span className="text-emerald-700 text-xs font-semibold uppercase tracking-wider">
-                            {localized.categoryName}
-                          </span>
-                        </div>
-
-                        {/* Description */}
-                        <p className="text-xs sm:text-[13px] text-stone-600 line-clamp-2 leading-relaxed">
-                          {localized.description}
-                        </p>
-                      </div>
-
-                      {/* Pricing, Quantity & Add to Cart */}
-                      <div className="pt-3 border-t border-stone-100 space-y-3">
-                        <div className="flex items-baseline justify-between">
-                          <div>
-                            <span className="text-xl sm:text-2xl font-black text-stone-900 font-numeric">
-                              ₹{product.price}
-                            </span>
-                            <span className="text-xs sm:text-sm text-stone-500 font-medium ml-1">
-                              / {localized.unit}
-                            </span>
-                          </div>
-
-                          {/* Direct to Farmer Tag */}
-                          <div className="text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md font-medium border border-emerald-200">
-                            {t.directToFarmer}
-                          </div>
-                        </div>
-
-                        {/* Action Row: Quantity Stepper & Add Button */}
-                        <div className="flex items-center gap-2.5">
-                          {/* Stepper */}
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex items-center bg-stone-100 rounded-xl p-1 border border-stone-200 text-xs shrink-0"
-                          >
-                            <button
-                              onClick={() => handleQtyChange(product.id, -1)}
-                              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="w-8 text-center font-bold text-stone-900 font-numeric text-sm">
-                              {qty}
-                            </span>
-                            <button
-                              onClick={() => handleQtyChange(product.id, 1)}
-                              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          {/* Add to Basket Button */}
-                          <button
-                            onClick={(e) => handleAdd(e, product)}
-                            className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-                          >
-                            <ShoppingBag className="w-4 h-4" />
-                            <span>{t.addToBasket}</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
-
-                  {/* Interstitial Ad Card In-Grid */}
-                  {adToDisplay && (
-                    <div
-                      key={`grid_ad_${adToDisplay.id}_${index}`}
-                      onClick={() => {
-                        if (adToDisplay.ctaCategory && adToDisplay.ctaCategory !== 'all') {
-                          onSelectCategory(adToDisplay.ctaCategory);
-                        }
-                      }}
-                      className="group bg-gradient-to-br from-[#04200f] via-[#064e3b] to-stone-950 text-white rounded-2xl border-2 border-emerald-400/50 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between relative cursor-pointer"
-                    >
-                      {/* Top Ad Image Container */}
-                      <div className="relative aspect-[16/11] sm:aspect-[4/3] bg-stone-900 overflow-hidden">
-                        <img
-                          src={adToDisplay.image}
-                          alt={adToDisplay.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#04200f] via-transparent to-black/40" />
-
-                        <div className="absolute top-3 left-3 bg-amber-400 text-amber-950 text-xs font-black px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-md uppercase tracking-wider">
-                          <Megaphone className="w-3.5 h-3.5" />
-                          <span>{adToDisplay.badge}</span>
-                        </div>
-
-                        {adToDisplay.discountText && (
-                          <div className="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md border border-emerald-400/40">
-                            {adToDisplay.discountText}
-                          </div>
-                        )}
-
-                        <div className="absolute bottom-2.5 left-2.5 right-2.5 text-emerald-200 text-xs font-mono">
-                          ★ Direct Farm-Gate Promotional Campaign
-                        </div>
-                      </div>
-
-                      {/* Ad Content */}
-                      <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
-                        <div className="space-y-2">
-                          <h4 className="text-xl sm:text-2xl font-black text-white group-hover:text-emerald-300 transition-colors font-serif-display leading-tight">
-                            {adToDisplay.title}
-                          </h4>
-                          <p className="text-xs sm:text-[13px] text-emerald-100/90 leading-relaxed">
-                            {adToDisplay.subtitle}
-                          </p>
-                        </div>
-
-                        <div className="pt-3 border-t border-emerald-800/80 space-y-3">
-                          {adToDisplay.code && (
-                            <div className="flex items-center justify-between bg-emerald-950/90 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-xs">
-                              <span className="text-emerald-300">Use Code:</span>
-                              <button
-                                onClick={(e) => handleCopyPromoCode(e, adToDisplay.code!)}
-                                className="font-mono font-bold text-amber-300 hover:text-white flex items-center gap-1 cursor-pointer"
-                              >
-                                <span>{adToDisplay.code}</span>
-                                {copiedCode === adToDisplay.code ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5 text-stone-400" />
-                                )}
-                              </button>
-                            </div>
-                          )}
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (adToDisplay.ctaCategory && adToDisplay.ctaCategory !== 'all') {
-                                onSelectCategory(adToDisplay.ctaCategory);
-                              }
-                            }}
-                            className="w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-black text-xs sm:text-sm py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                          >
-                            <span>{adToDisplay.ctaText}</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </React.Fragment>
+                </div>
               );
             })}
           </div>
         )}
       </section>
+
+      {/* Edit Product Modal */}
+      <EditProductModal
+        product={editingProduct}
+        isOpen={!!editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSave={handleSaveProduct}
+        onDelete={handleDeleteProduct}
+      />
+
+      {/* Admin Product Manager Catalog Modal */}
+      <AdminProductManagerModal
+        isOpen={isProductManagerOpen}
+        onClose={() => setIsProductManagerOpen(false)}
+        products={products}
+        onEditProduct={(p) => {
+          setIsProductManagerOpen(false);
+          setEditingProduct(p);
+        }}
+        onAddNewProduct={handleAddNewProductModal}
+        onDeleteProduct={handleDeleteProduct}
+        onNavigateToAdminStudio={onNavigateToAdmin || (() => {})}
+      />
     </div>
   );
 };

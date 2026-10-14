@@ -7,7 +7,8 @@ import {
   FarmerDoc,
   LanguageCode,
   AdCard,
-  SiteStructureConfig
+  SiteStructureConfig,
+  CategoryNode
 } from '../types';
 import {
   DEFAULT_USER,
@@ -16,7 +17,8 @@ import {
   INITIAL_REVIEWS,
   INITIAL_ORDERS,
   INITIAL_ADS,
-  INITIAL_SITE_STRUCTURE
+  INITIAL_SITE_STRUCTURE,
+  INITIAL_CATEGORIES
 } from '../data/mockData';
 
 const STORAGE_KEYS = {
@@ -29,7 +31,8 @@ const STORAGE_KEYS = {
   WISHLIST: 'xiva_wishlist',
   LANGUAGE: 'xiva_language',
   ADS: 'xiva_ads_v2',
-  SITE_STRUCTURE: 'xiva_site_structure_v2'
+  SITE_STRUCTURE: 'xiva_site_structure_v2',
+  CATEGORIES: 'xiva_categories_v2'
 };
 
 export class StorageService {
@@ -135,6 +138,13 @@ export class StorageService {
       const parsed = JSON.parse(raw);
       // Ensure only valid PDF categories exist
       if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].category) {
+        const existingIds = new Set(parsed.map((p: Product) => p.id));
+        const missing = INITIAL_PRODUCTS.filter((p) => !existingIds.has(p.id));
+        if (missing.length > 0) {
+          const merged = [...missing, ...parsed];
+          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
+          return merged;
+        }
         return parsed;
       }
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
@@ -347,6 +357,29 @@ export class StorageService {
     return order;
   }
 
+  static updateOrderStatus(orderId: string, status: Order['status'], liveStage?: number): Order[] {
+    const orders = this.getOrders();
+    const order = orders.find((o) => o.id === orderId);
+    if (order) {
+      order.status = status;
+      if (liveStage !== undefined) {
+        order.liveStage = liveStage;
+      } else {
+        const stageMap: Record<Order['status'], number> = {
+          placed: 0,
+          confirmed: 1,
+          harvested: 2,
+          transit_cold: 3,
+          out_for_delivery: 4,
+          delivered: 5
+        };
+        order.liveStage = stageMap[status] ?? order.liveStage;
+      }
+      this.saveOrders(orders);
+    }
+    return orders;
+  }
+
   // Ad Cards & Promotional Banners Management
   static getAds(): AdCard[] {
     const raw = localStorage.getItem(STORAGE_KEYS.ADS);
@@ -424,6 +457,76 @@ export class StorageService {
   static resetAdsToDefaults(): AdCard[] {
     localStorage.setItem(STORAGE_KEYS.ADS, JSON.stringify(INITIAL_ADS));
     return INITIAL_ADS;
+  }
+
+  // Dynamic Hierarchical Categories
+  static getCategories(): CategoryNode[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+      return INITIAL_CATEGORIES;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].id) {
+        return parsed;
+      }
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+      return INITIAL_CATEGORIES;
+    } catch {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+      return INITIAL_CATEGORIES;
+    }
+  }
+
+  static saveCategories(categories: CategoryNode[]): void {
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+  }
+
+  static addCategory(category: CategoryNode): CategoryNode[] {
+    const categories = this.getCategories();
+    // Check if ID already exists
+    const exists = categories.some((c) => c.id === category.id);
+    if (exists) {
+      category.id = `${category.id}_${Date.now()}`;
+    }
+    categories.push(category);
+    this.saveCategories(categories);
+    return categories;
+  }
+
+  static updateCategory(updated: CategoryNode): CategoryNode[] {
+    const categories = this.getCategories();
+    const idx = categories.findIndex((c) => c.id === updated.id);
+    if (idx !== -1) {
+      categories[idx] = updated;
+      this.saveCategories(categories);
+    }
+    return categories;
+  }
+
+  static deleteCategory(categoryId: string): CategoryNode[] {
+    let categories = this.getCategories();
+    // Recursively collect all descendant IDs to prevent orphaned categories
+    const idsToDelete = new Set<string>([categoryId]);
+    let addedNew = true;
+    while (addedNew) {
+      addedNew = false;
+      categories.forEach((cat) => {
+        if (cat.parentId && idsToDelete.has(cat.parentId) && !idsToDelete.has(cat.id)) {
+          idsToDelete.add(cat.id);
+          addedNew = true;
+        }
+      });
+    }
+    categories = categories.filter((c) => !idsToDelete.has(c.id));
+    this.saveCategories(categories);
+    return categories;
+  }
+
+  static resetCategoriesToDefaults(): CategoryNode[] {
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+    return INITIAL_CATEGORIES;
   }
 }
 

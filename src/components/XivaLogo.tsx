@@ -19,11 +19,11 @@ export const XivaLogo: React.FC<XivaLogoProps> = ({
 }) => {
   // Sizing definitions
   const dimensions = {
-    xs: { emblem: 'w-6 h-6', text: 'text-sm', sub: 'text-[8px]', gap: 'gap-1.5' },
-    sm: { emblem: 'w-8 h-8', text: 'text-lg', sub: 'text-[9px]', gap: 'gap-2' },
-    md: { emblem: 'w-10 h-10', text: 'text-2xl', sub: 'text-[10px]', gap: 'gap-2.5' },
-    lg: { emblem: 'w-14 h-14', text: 'text-3xl', sub: 'text-xs', gap: 'gap-3' },
-    xl: { emblem: 'w-20 h-20', text: 'text-4xl', sub: 'text-sm', gap: 'gap-3.5' }
+    xs: { emblem: 'w-7 h-7', text: 'text-sm font-bold', sub: 'text-[9px]', gap: 'gap-2' },
+    sm: { emblem: 'w-9 h-9', text: 'text-xl font-black', sub: 'text-[10px]', gap: 'gap-2.5' },
+    md: { emblem: 'w-12 h-12', text: 'text-2xl sm:text-3xl font-black', sub: 'text-[11px] sm:text-xs font-bold tracking-wider', gap: 'gap-3' },
+    lg: { emblem: 'w-16 h-16', text: 'text-3xl sm:text-4xl font-black', sub: 'text-xs sm:text-sm font-bold tracking-widest', gap: 'gap-3.5' },
+    xl: { emblem: 'w-20 h-20', text: 'text-4xl sm:text-5xl font-black', sub: 'text-sm font-bold tracking-widest', gap: 'gap-4' }
   }[size];
 
   // Vector 4-Leaf Botanical X Emblem from the uploaded image

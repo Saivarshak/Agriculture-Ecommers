@@ -11,7 +11,8 @@ import {
   CheckCircle2,
   TrendingUp,
   ThumbsUp,
-  AlertCircle
+  AlertCircle,
+  Edit2
 } from 'lucide-react';
 import { Product, Review, User, LanguageCode } from '../types';
 import { translations } from '../data/translations';
@@ -25,6 +26,8 @@ interface ProductDetailModalProps {
   user: User | null;
   language: LanguageCode;
   onOpenOrders: () => void;
+  isAdmin?: boolean;
+  onEditAsAdmin?: (product: Product) => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -33,7 +36,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onAddToCart,
   user,
   language,
-  onOpenOrders
+  onOpenOrders,
+  isAdmin = false,
+  onEditAsAdmin
 }) => {
   if (!product) return null;
 
@@ -301,6 +306,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
 
               <div className="flex gap-3">
+                {isAdmin && onEditAsAdmin && (
+                  <button
+                    onClick={() => {
+                      onEditAsAdmin(product);
+                      onClose();
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-stone-950 font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer shrink-0"
+                    title="Admin: Edit this product"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    <span>Edit Product</span>
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     onAddToCart(product, quantity);

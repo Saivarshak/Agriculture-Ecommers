@@ -10,6 +10,7 @@ import { AdminPortalModal } from './components/AdminPortalModal';
 import { CartDrawer } from './components/CartDrawer';
 import { WishlistDrawer } from './components/WishlistDrawer';
 import { ProductDetailModal } from './components/ProductDetailModal';
+import { AddToCartPopup } from './components/AddToCartPopup';
 import { LeafyBackground } from './components/LeafyBackground';
 import { XivaLogo } from './components/XivaLogo';
 import { StorageService } from './services/storage';
@@ -23,7 +24,8 @@ import {
   LanguageCode,
   User,
   AdCard,
-  SiteStructureConfig
+  SiteStructureConfig,
+  CategoryNode
 } from './types';
 import { ShieldCheck, Heart, Sparkles, CheckCircle2 } from 'lucide-react';
 
@@ -31,11 +33,13 @@ export default function App() {
   // Navigation & Category filter state
   const [currentTab, setCurrentTab] = useState<'marketplace' | 'farmer' | 'admin' | 'orders'>('marketplace');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'all'>('all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<LanguageCode>(() => StorageService.getLanguage());
 
   // Data state
   const [products, setProducts] = useState<Product[]>(() => StorageService.getProducts());
+  const [categories, setCategories] = useState<CategoryNode[]>(() => StorageService.getCategories());
   const [farmers, setFarmers] = useState<FarmerProfile[]>(() => StorageService.getFarmers());
   const [orders, setOrders] = useState<Order[]>(() => StorageService.getOrders());
   const [ads, setAds] = useState<AdCard[]>(() => StorageService.getAds());
@@ -70,6 +74,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [cartNotice, setCartNotice] = useState<{ product: Product; quantity: number } | null>(null);
 
   const t = translations[language];
 
@@ -82,6 +87,7 @@ export default function App() {
   // Reload data from StorageService
   const handleRefreshData = () => {
     setProducts(StorageService.getProducts());
+    setCategories(StorageService.getCategories());
     setFarmers(StorageService.getFarmers());
     setOrders(StorageService.getOrders());
     setAds(StorageService.getAds());
@@ -117,6 +123,12 @@ export default function App() {
       }
       return [...prev, { product, quantity }];
     });
+    setCartNotice({ product, quantity });
+  };
+
+  const handleCheckInCart = () => {
+    setCartNotice(null);
+    setIsCartOpen(true);
   };
 
   const handleUpdateCartQuantity = (productId: string, qty: number) => {
@@ -163,6 +175,9 @@ export default function App() {
   const handleLoginSuccess = (loggedInUser: User) => {
     StorageService.setUser(loggedInUser);
     setUser(loggedInUser);
+    if (loggedInUser.role === 'admin' || StorageService.isAdminAuthenticated()) {
+      setIsAdmin(true);
+    }
     setIsAuthModalOpen(false);
   };
 
@@ -244,6 +259,9 @@ export default function App() {
         {currentTab === 'marketplace' && (
           <Marketplace
             products={products}
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategoryNode={setSelectedCategoryId}
             ads={ads}
             siteStructure={siteStructure}
             currentCategory={selectedCategory}
@@ -256,6 +274,12 @@ export default function App() {
             onSearchChange={setSearchQuery}
             language={language}
             onNavigateToFarmer={() => handleSelectTab('farmer')}
+            isAdmin={isAdmin}
+            onLoginAsAdmin={handleAdminLoginSuccess}
+            onLogoutAdmin={handleLogoutAdmin}
+            onNavigateToAdmin={() => handleSelectTab('admin')}
+            onRefreshProducts={handleRefreshData}
+            onOpenAdminLogin={() => setIsAdminPortalOpen(true)}
           />
         )}
 
@@ -277,6 +301,8 @@ export default function App() {
             onLoginSuccess={handleAdminLoginSuccess}
             onLogout={handleLogoutAdmin}
             products={products}
+            categories={categories}
+            orders={orders}
             ads={ads}
             siteStructure={siteStructure}
             farmers={farmers}
@@ -345,25 +371,33 @@ export default function App() {
                     {t.navOrders}
                   </button>
                 </li>
+                <li>
+                  <button
+                    onClick={() => handleSelectTab('admin')}
+                    className="hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 text-emerald-300 font-semibold"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Admin Section & Studio</span>
+                  </button>
+                </li>
               </ul>
             </div>
 
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-300 mb-3">
-                {language === 'te' ? 'అధికారిక లాగిన్' : language === 'hi' ? 'प्रशासनिक लॉगिन' : 'Admin & Security'}
+                {language === 'te' ? 'ధృవీకరణ & నమ్మకం' : language === 'hi' ? 'गुणवत्ता और विश्वास' : 'Integrity & Trust'}
               </h4>
               <ul className="space-y-2 text-xs text-emerald-200">
-                <li>
-                  <button
-                    onClick={() => handleSelectTab('admin')}
-                    className="flex items-center gap-1.5 text-emerald-300 hover:text-white transition-colors cursor-pointer"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{t.adminPortalTitle} (/admin)</span>
-                  </button>
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>100% Direct Producer Gate Pay</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>NPOP Certified Bio-Harvests</span>
                 </li>
                 <li className="text-[11px] text-emerald-300/80">
-                  {t.adminPortalDesc}
+                  Zero predatory middlemen, cold-chain doorstep delivery.
                 </li>
               </ul>
             </div>
@@ -439,6 +473,19 @@ export default function App() {
           setSelectedProduct(null);
           handleSelectTab('orders');
         }}
+        isAdmin={isAdmin}
+        onEditAsAdmin={() => {
+          setSelectedProduct(null);
+          handleSelectTab('admin');
+        }}
+      />
+
+      {/* Item Added to Cart Green Popup with "Check in cart" CTA */}
+      <AddToCartPopup
+        item={cartNotice}
+        onClose={() => setCartNotice(null)}
+        onCheckInCart={handleCheckInCart}
+        language={language}
       />
     </div>
   );
