@@ -40,9 +40,9 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
 }) => {
   const t = translations[language];
 
-  // Login form state - pre-filled with admin credentials
-  const [username, setUsername] = useState('saivarshak14@gmail.com');
-  const [password, setPassword] = useState('1111');
+  // Login form state
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Product management state
@@ -193,7 +193,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="1111"
+                    placeholder="••••••••"
                     className="w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border border-stone-300 focus:ring-1 focus:ring-emerald-700 font-mono"
                   />
                 </div>
@@ -210,8 +210,6 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setUsername('saivarshak14@gmail.com');
-                    setPassword('1111');
                     const success = StorageService.loginAdmin('saivarshak14@gmail.com', '1111');
                     if (success) {
                       onLoginSuccess();
@@ -219,7 +217,7 @@ export const AdminPortalModal: React.FC<AdminPortalModalProps> = ({
                   }}
                   className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold py-2 rounded-xl text-xs transition-colors cursor-pointer border border-stone-200"
                 >
-                  {t.quickDemoAccess} (saivarshak14@gmail.com / 1111)
+                  {t.quickDemoAccess}
                 </button>
               </div>
             </form>

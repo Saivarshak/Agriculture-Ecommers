@@ -27,6 +27,7 @@ import {
   SiteStructureConfig,
   CategoryNode
 } from './types';
+import { smoothScrollToItem } from './utils/categoryMatcher';
 import { ShieldCheck, Heart, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
@@ -226,6 +227,20 @@ export default function App() {
 
   const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
+  const handleScrollToProduct = (productId: string, preferredQuery?: string) => {
+    if (currentTab !== 'marketplace') {
+      handleSelectTab('marketplace');
+    }
+    setSelectedCategory('all');
+    setSelectedCategoryId(null);
+    if (preferredQuery !== undefined) {
+      setSearchQuery(preferredQuery);
+    }
+    setTimeout(() => {
+      smoothScrollToItem(productId);
+    }, 120);
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col font-sans text-stone-900 relative selection:bg-emerald-200 selection:text-emerald-900">
       {/* Botanical Background Animations */}
@@ -252,6 +267,8 @@ export default function App() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         siteStructure={siteStructure}
+        products={products}
+        onScrollToProduct={handleScrollToProduct}
       />
 
       {/* Primary Main Content View */}

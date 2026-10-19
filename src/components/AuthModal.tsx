@@ -22,8 +22,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const t = translations[language];
 
-  const [email, setEmail] = useState('saivarshak14@gmail.com');
-  const [password, setPassword] = useState('1111');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>(currentUser?.role || 'farmer');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -107,38 +107,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Quick Demo Credentials Auto-Fill Banner */}
+        {/* Quick Demo Access without exposing credentials */}
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="font-bold text-emerald-950 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-700" />
-              Pre-Configured Demo Credentials
+              Quick Demo Access
             </span>
-            <span className="text-[10px] text-emerald-700 font-mono font-bold">1-Click Auto Fill</span>
+            <span className="text-[10px] text-emerald-700 font-mono font-bold">1-Click Login</span>
           </div>
-          <div className="text-[11px] text-emerald-800 font-mono space-y-0.5">
-            <div>User: <strong>saivarshak14@gmail.com</strong></div>
-            <div>Password: <strong>1111</strong></div>
-          </div>
+          <p className="text-[11px] text-emerald-800">
+            Select a verified profile to test platform features instantly:
+          </p>
 
           <div className="pt-1.5 flex gap-2">
             <button
               type="button"
               onClick={() => handleQuickLogin('farmer')}
-              className="flex-1 py-1.5 px-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-[11px] text-center transition-colors shadow-2xs"
+              className="flex-1 py-1.5 px-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold text-[11px] text-center transition-colors shadow-2xs cursor-pointer"
             >
               Sign in as Farmer
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('consumer')}
-              className="flex-1 py-1.5 px-2 bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded font-bold text-[11px] text-center transition-colors"
+              className="flex-1 py-1.5 px-2 bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded font-bold text-[11px] text-center transition-colors cursor-pointer"
             >
               As Consumer
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('admin')}
-              className="flex-1 py-1.5 px-2 bg-stone-800 hover:bg-stone-900 text-white rounded font-bold text-[11px] text-center transition-colors"
+              className="flex-1 py-1.5 px-2 bg-stone-800 hover:bg-stone-900 text-white rounded font-bold text-[11px] text-center transition-colors cursor-pointer"
             >
               As Admin
             </button>
@@ -201,7 +201,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="saivarshak14@gmail.com"
+                placeholder="Enter your email address"
                 className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-stone-300 focus:ring-1 focus:ring-emerald-700 font-mono"
               />
             </div>
@@ -216,7 +216,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="1111"
+                placeholder="••••••••"
                 className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-stone-300 focus:ring-1 focus:ring-emerald-700 font-mono"
               />
             </div>

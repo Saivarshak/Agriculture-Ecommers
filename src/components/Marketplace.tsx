@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShieldCheck,
   Star,
@@ -16,16 +16,18 @@ import {
   Lock,
   Leaf,
   Edit2,
-  Plus
+  Plus,
+  RotateCcw,
+  X
 } from 'lucide-react';
 import { Product, ProductCategory, LanguageCode, AdCard, SiteStructureConfig, CategoryNode } from '../types';
 import { translations } from '../data/translations';
 import { getProductLocalized } from '../data/productTranslations';
 import { CategoryNavPanel } from './CategoryNavPanel';
-import { AdminCard } from './AdminCard';
 import { EditProductModal } from './EditProductModal';
 import { AdminProductManagerModal } from './AdminProductManagerModal';
 import { StorageService } from '../services/storage';
+import { SHOP_CATEGORIES, productMatchesCategory, smoothScrollToCategory, smoothScrollToItem } from '../utils/categoryMatcher';
 
 export interface MarketplaceProps {
   products: Product[];
@@ -129,17 +131,13 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
     setEditingProduct(blankProduct);
   };
 
-  const handleQuickLoginAdmin = () => {
-    const success = StorageService.loginAdmin('saivarshak14@gmail.com', '1111');
-    if (success && onLoginAsAdmin) {
-      onLoginAsAdmin();
-    } else if (onOpenAdminLogin) {
-      onOpenAdminLogin();
-    }
-  };
-
   // Active category handling
   const activeCatId = selectedCategoryId || (currentCategory !== 'all' ? currentCategory : null);
+
+  const activeCategoryObj = useMemo(() => {
+    if (!activeCatId || activeCatId === 'all') return null;
+    return SHOP_CATEGORIES.find((c) => c.id.toLowerCase() === activeCatId.toLowerCase()) || null;
+  }, [activeCatId]);
 
   const handleCategorySelect = (catId: string | null) => {
     if (onSelectCategoryNode) {
@@ -148,38 +146,26 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
     if (!catId || catId === 'all') {
       onSelectCategory('all');
     }
+    setTimeout(() => {
+      smoothScrollToCategory(catId);
+    }, 50);
   };
+
+  // Real-time category product counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    SHOP_CATEGORIES.forEach((cat) => {
+      counts[cat.id] = products.filter((p) => productMatchesCategory(p, cat.id)).length;
+    });
+    return counts;
+  }, [products]);
 
   // Filter products based on selected category, search, and sort
   const filteredProducts = useMemo(() => {
     return products
       .filter((p) => {
-        if (activeCatId) {
-          const lowerCat = activeCatId.toLowerCase();
-          const pName = p.name.toLowerCase();
-          const pCat = (p.category || '').toLowerCase();
-          const pDesc = (p.description || '').toLowerCase();
-
-          if (lowerCat === 'seeds') {
-            if (!pName.includes('seed') && !pName.includes('maize') && !pName.includes('paddy') && !pName.includes('wheat')) return false;
-          } else if (lowerCat === 'fertilizers') {
-            if (!pName.includes('fertilizer') && !pName.includes('urea') && !pName.includes('compost')) return false;
-          } else if (lowerCat === 'pesticides') {
-            if (!pName.includes('pesticide') && !pName.includes('neem') && !pDesc.includes('pesticide')) return false;
-          } else if (lowerCat === 'equipment') {
-            if (!pName.includes('tiller') && !pName.includes('equipment') && !pName.includes('tractor')) return false;
-          } else if (lowerCat === 'irrigation') {
-            if (!pName.includes('pump') && !pName.includes('irrigation') && !pName.includes('water')) return false;
-          } else if (lowerCat === 'tools') {
-            if (!pName.includes('tool') && !pName.includes('tiller')) return false;
-          } else if (lowerCat === 'animal_feed') {
-            if (!pName.includes('feed') && !pName.includes('oats') && !pName.includes('maize')) return false;
-          } else if (lowerCat === 'organic') {
-            if (!pName.includes('organic') && !p.organicCertification.toLowerCase().includes('organic')) return false;
-          } else {
-            // direct category match
-            if (pCat !== lowerCat && p.categoryId !== activeCatId) return false;
-          }
+        if (activeCatId && activeCatId !== 'all') {
+          if (!productMatchesCategory(p, activeCatId)) return false;
         }
 
         if (searchQuery.trim()) {
@@ -252,13 +238,14 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
               className="absolute inset-0 w-full h-full object-cover object-center"
             />
 
-            {/* Subtle Gradient Scrim on Left so text is crisp and readable */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent sm:max-w-xl" />
+            {/* Gradient Scrim on Left so text is crisp and readable */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/30" />
 
-            {/* Banner Text Content */}
-            <div className="relative z-10 space-y-3 max-w-md text-white">
+            {/* Banner Text Content: Perfectly Aligned Typography */}
+            <div className="relative z-10 space-y-3.5 max-w-lg text-white">
               {/* Green Sub-heading */}
-              <p className="text-[11px] sm:text-xs font-black tracking-widest uppercase text-emerald-300 flex items-center gap-1.5">
+              <p className="text-[11px] sm:text-xs font-black tracking-widest uppercase text-emerald-300 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
                 <span>QUALITY INPUTS • HIGHER YIELDS</span>
               </p>
 
@@ -276,6 +263,10 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
               <div className="pt-2">
                 <a
                   href="#featured-catalog"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    smoothScrollToCategory(null);
+                  }}
                   className="inline-flex items-center gap-2 bg-[#007a4d] hover:bg-[#006841] active:bg-[#005736] text-white font-bold text-xs sm:text-sm py-2.5 px-5 rounded-xl transition-all shadow-md cursor-pointer group"
                 >
                   <span>Explore Categories</span>
@@ -286,19 +277,8 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
           </div>
         </div>
 
-        {/* COLUMN 3 (Desktop: 3 cols): Admin Card + Trust Feature Cards + Bottom Promo */}
+        {/* COLUMN 3 (Desktop: 3 cols): Trust Feature Cards + Bottom Promo */}
         <div className="lg:col-span-3 flex flex-col gap-2.5">
-          {/* Admin Card */}
-          <AdminCard
-            isAdmin={isAdmin}
-            onLoginAsAdmin={handleQuickLoginAdmin}
-            onLogoutAdmin={onLogoutAdmin || (() => {})}
-            onOpenProductManager={() => setIsProductManagerOpen(true)}
-            onAddNewProduct={handleAddNewProductModal}
-            onNavigateToAdminStudio={onNavigateToAdmin || (() => {})}
-            totalProductsCount={products.length}
-          />
-
           {/* 1. Free Delivery */}
           <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#007a4d] flex items-center justify-center shrink-0">
@@ -345,7 +325,10 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
 
           {/* 5. Bottom Promo Card: Better Farming for a Brighter Future */}
           <div className="bg-[#eaf7f0] rounded-2xl p-4 border border-emerald-200/80 shadow-xs flex-1 flex flex-col justify-between relative overflow-hidden min-h-[110px]">
-            <div className="relative z-10 space-y-1 max-w-[65%]">
+            {/* Soft gradient to protect text legibility against image */}
+            <div className="absolute inset-y-0 left-0 right-24 bg-gradient-to-r from-[#eaf7f0] via-[#eaf7f0]/95 to-transparent z-5 pointer-events-none" />
+
+            <div className="relative z-10 space-y-1 max-w-[58%] pr-2">
               <div className="flex items-center gap-1.5 text-[#007a4d] mb-1">
                 <Leaf className="w-4 h-4" />
               </div>
@@ -361,7 +344,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
             <img
               src="/src/assets/images/sustainable_farming_promo_1791974229133.jpg"
               alt="Farmer in organic field"
-              className="absolute right-0 bottom-0 top-0 w-36 h-full object-cover object-center rounded-r-2xl"
+              className="absolute right-0 bottom-0 top-0 w-32 h-full object-cover object-center rounded-r-2xl"
             />
           </div>
         </div>
@@ -429,27 +412,153 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* SECTION 2: FEATURED PRODUCTS (Header + 6-Column Card Grid)                 */}
+      {/* SECTION 2: PRODUCT RESULTS CATALOG (Header + Category Pills + Card Grid)    */}
       {/* ========================================================================= */}
-      <section id="featured-catalog" className="space-y-4 pt-2">
-        {/* Section Header matching Image 1 */}
-        <div className="flex items-center justify-between pb-1">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-[#007a4d] flex items-center justify-center shrink-0">
-              <Leaf className="w-4.5 h-4.5" />
+      <section
+        id={activeCatId ? `category-${activeCatId}` : 'featured-catalog'}
+        className="space-y-4 pt-2 scroll-mt-24 relative"
+      >
+        {/* Invisible anchor points for all 8 categories so every category has its unique HTML ID */}
+        <div id="featured-catalog" className="scroll-mt-24 pointer-events-none" />
+        {SHOP_CATEGORIES.map((cat) => (
+          <div key={cat.id} id={`category-${cat.id}`} className="scroll-mt-24 pointer-events-none" />
+        ))}
+
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-stone-200/60">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#007a4d] flex items-center justify-center shrink-0 border border-emerald-200/60 shadow-2xs">
+              {searchQuery.trim() ? <Search className="w-4 h-4 text-[#007a4d]" /> : <Leaf className="w-4 h-4" />}
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
-              Featured Products
-            </h2>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+                  {searchQuery.trim()
+                    ? `Search Results`
+                    : activeCategoryObj
+                    ? `${activeCategoryObj.name}`
+                    : 'Featured Products'}
+                </h2>
+                {searchQuery.trim() ? (
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#007a4d] border border-emerald-300">
+                    "{searchQuery}" ({filteredProducts.length})
+                  </span>
+                ) : activeCategoryObj ? (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-[#007a4d] border border-emerald-300">
+                    Active Filter
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-xs text-stone-500 font-medium mt-0.5">
+                {searchQuery.trim()
+                  ? `Found ${filteredProducts.length} items matching your search. Click any item to jump directly to it.`
+                  : activeCategoryObj
+                  ? `Showing ${filteredProducts.length} verified products in ${activeCategoryObj.name}`
+                  : `Showing all ${filteredProducts.length} agricultural products directly from farmers`}
+              </p>
+            </div>
           </div>
 
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            {searchQuery.trim() && (
+              <button
+                onClick={() => onSearchChange('')}
+                className="text-xs sm:text-sm font-bold text-stone-700 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 border border-stone-300 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Clear search query"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Clear Search</span>
+              </button>
+            )}
+            {activeCatId ? (
+              <button
+                onClick={() => handleCategorySelect(null)}
+                className="text-xs sm:text-sm font-bold text-[#007a4d] hover:text-[#005c3a] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Reset category filter and restore all products"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Category</span>
+              </button>
+            ) : !searchQuery.trim() && (
+              <button
+                onClick={() => handleCategorySelect(null)}
+                className="text-xs sm:text-sm font-semibold text-[#007a4d] hover:text-[#005c3a] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>All {products.length} Products</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Searched Items Quick Jump Bar - Smoothly scroll to respective items */}
+        {searchQuery.trim() && filteredProducts.length > 0 && (
+          <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none animate-fadeIn">
+            <span className="text-xs font-bold text-[#007a4d] shrink-0 flex items-center gap-1.5">
+              <Search className="w-3.5 h-3.5" />
+              <span>Scroll to item:</span>
+            </span>
+            <div className="flex items-center gap-2 flex-nowrap">
+              {filteredProducts.slice(0, 8).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => smoothScrollToItem(p.id)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-emerald-100/80 text-stone-800 hover:text-[#007a4d] border border-emerald-200 rounded-lg text-xs font-semibold whitespace-nowrap transition-all shadow-2xs cursor-pointer group"
+                  title={`Jump to ${p.name}`}
+                >
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    className="w-4 h-4 object-cover rounded-sm shrink-0"
+                  />
+                  <span className="truncate max-w-[120px] sm:max-w-[180px]">{p.name}</span>
+                  <span className="text-[10px] text-emerald-700 font-bold font-numeric">
+                    ₹{p.price}
+                  </span>
+                  <ArrowRight className="w-3 h-3 text-stone-400 group-hover:text-[#007a4d] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Responsive Quick Category Filter Pills Bar (Works across Desktop, Tablet, Mobile) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-none">
           <button
             onClick={() => handleCategorySelect(null)}
-            className="text-sm font-semibold text-[#007a4d] hover:text-[#005c3a] hover:underline flex items-center gap-1 cursor-pointer"
+            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              !activeCatId || activeCatId === 'all'
+                ? 'bg-[#007a4d] text-white shadow-xs'
+                : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+            }`}
           >
-            <span>View All Products</span>
-            <ArrowRight className="w-4 h-4" />
+            All ({products.length})
           </button>
+          {SHOP_CATEGORIES.map((cat) => {
+            const isSelected = activeCatId === cat.id;
+            const count = categoryCounts[cat.id] ?? 0;
+            return (
+              <button
+                key={cat.id}
+                id={`pill-cat-${cat.id}`}
+                onClick={() => handleCategorySelect(isSelected ? null : cat.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-[#007a4d] text-white shadow-xs ring-2 ring-[#007a4d]/20'
+                    : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+                }`}
+              >
+                <span>{cat.name}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-numeric font-semibold ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-500'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Product Cards Grid: 6 columns on large screens */}
@@ -492,8 +601,10 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
               return (
                 <div
                   key={product.id}
+                  id={`product-card-${product.id}`}
+                  data-product-id={product.id}
                   onClick={() => onSelectProduct(product)}
-                  className="group bg-white rounded-2xl border border-stone-200 hover:border-emerald-500/40 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between p-3 sm:p-4 cursor-pointer relative"
+                  className="group bg-white rounded-2xl border border-stone-200 hover:border-emerald-500/40 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between p-3 sm:p-4 cursor-pointer relative scroll-mt-28"
                 >
                   {/* Top: Wishlist Heart Button & Admin Edit Badge */}
                   <div className="flex items-center justify-between relative z-10">

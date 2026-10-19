@@ -48,7 +48,7 @@ export const AdminCard: React.FC<AdminCardProps> = ({
 
       {/* Top Header Row */}
       <div className="flex items-center justify-between mb-2.5 relative z-10">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div
             className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
               isAdmin
@@ -56,7 +56,7 @@ export const AdminCard: React.FC<AdminCardProps> = ({
                 : 'bg-emerald-50 text-[#007a4d]'
             }`}
           >
-            <ShieldCheck className="w-4.5 h-4.5" />
+            <ShieldCheck className="w-4 h-4" />
           </div>
           <div>
             <h4
@@ -67,7 +67,7 @@ export const AdminCard: React.FC<AdminCardProps> = ({
               {isAdmin ? 'Admin Control Center' : 'Admin Portal'}
             </h4>
             <span
-              className={`text-[10px] font-semibold tracking-wide block ${
+              className={`text-[10px] font-semibold tracking-wide block mt-0.5 ${
                 isAdmin ? 'text-emerald-300' : 'text-stone-500'
               }`}
             >
@@ -156,10 +156,11 @@ export const AdminCard: React.FC<AdminCardProps> = ({
 
               <button
                 onClick={onNavigateToAdminStudio}
-                className="px-2.5 py-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-xl font-bold text-xs border border-stone-200 transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-1 px-3 py-2 text-stone-700 hover:text-stone-900 hover:bg-stone-100 rounded-xl font-bold text-xs border border-stone-200 transition-colors cursor-pointer shrink-0"
                 title="Go to Admin Section"
               >
-                Admin Section
+                <span>Admin Section</span>
+                <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
               </button>
             </div>
           </>

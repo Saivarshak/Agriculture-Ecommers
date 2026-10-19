@@ -44,6 +44,14 @@
   font-family: 'Playfair Display', Georgia, Cambria, 'Times New Roman', Times, serif;
 }
 
+/* Fractional icon and badge sizes */
+.w-4\.5 { width: 1.125rem; }
+.h-4\.5 { height: 1.125rem; }
+.w-3\.5 { width: 0.875rem; }
+.h-3\.5 { height: 0.875rem; }
+.w-2\.5 { width: 0.625rem; }
+.h-2\.5 { height: 0.625rem; }
+
 .font-numeric {
   font-variant-numeric: tabular-nums;
 }

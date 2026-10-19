@@ -536,7 +536,7 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="saivarshak14@gmail.com"
+                    placeholder="admin@xiva.org"
                     className="w-full pl-9 pr-3 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-600 font-medium"
                   />
                   <Mail className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
@@ -619,7 +619,7 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
             </span>
             <span className="text-stone-400 text-xs">·</span>
             <span className="text-xs font-semibold text-stone-600">
-              Logged in: <strong className="text-emerald-900">saivarshak14@gmail.com</strong>
+              Logged in: <strong className="text-emerald-900">Platform Administrator</strong>
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-stone-900 font-serif-display tracking-tight">
