@@ -45,6 +45,7 @@ import {
 import { StorageService } from '../services/storage';
 import { translations } from '../data/translations';
 import { XivaLogo } from './XivaLogo';
+import { AdminMediaManagerView } from './AdminMediaManagerView';
 
 export const IMAGE_PRESETS = [
   { label: 'Lush Farm Harvest Spread', url: '/src/assets/images/hero_farm_produce_spread_1791160693688.jpg' },
@@ -96,7 +97,7 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Active studio tab
-  const [activeTab, setActiveTab] = useState<'cards' | 'categories' | 'ads' | 'structure' | 'orders' | 'farmers'>('cards');
+  const [activeTab, setActiveTab] = useState<'cards' | 'media' | 'categories' | 'ads' | 'structure' | 'orders' | 'farmers'>('cards');
   const [notification, setNotification] = useState<string | null>(null);
 
   // Categories Hierarchy management state
@@ -664,6 +665,18 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab('media')}
+          className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            activeTab === 'media'
+              ? 'bg-[#064e3b] text-white shadow-md'
+              : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+          }`}
+        >
+          <ImageIcon className="w-4 h-4 text-emerald-500" />
+          <span>Media & Images</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('categories')}
           className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
             activeTab === 'categories'
@@ -723,6 +736,13 @@ export const AdminStudio: React.FC<AdminStudioProps> = ({
           <span>Farmer Dossiers ({farmers.length})</span>
         </button>
       </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* TAB: MEDIA & WEBSITE IMAGE MANAGEMENT */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'media' && (
+        <AdminMediaManagerView onRefreshParentData={onRefreshData} />
+      )}
 
       {/* ------------------------------------------------------------- */}
       {/* TAB 1: PRODUCE CARDS MANAGEMENT */}

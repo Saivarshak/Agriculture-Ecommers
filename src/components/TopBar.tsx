@@ -222,13 +222,17 @@ export const TopBar: React.FC<TopBarProps> = ({
           className="group flex items-center gap-2.5 text-left focus:outline-none shrink-0 cursor-pointer"
           title="AgriShop - Grow Better • Farm Smarter"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8 drop-shadow-xs">
-              <path d="M20 20C20 10 12 4 4 6C3 14 9 21 20 20Z" fill="#007a4d" />
-              <path d="M20 20C20 9 29 4 36 6C37 14 31 21 20 20Z" fill="#007a4d" opacity="0.9" />
-              <path d="M20 20C13 25 8 32 8 38C17 38 22 31 20 20Z" fill="#059669" opacity="0.85" />
-              <path d="M20 20C27 25 32 32 32 38C23 38 18 31 20 20Z" fill="#059669" opacity="0.85" />
-            </svg>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 overflow-hidden">
+            {siteStructure?.logoImage && siteStructure.logoImage !== '/src/assets/images/xiva_logo.svg' ? (
+              <img src={siteStructure.logoImage} alt="Brand Logo" className="w-8 h-8 object-contain" />
+            ) : (
+              <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8 drop-shadow-xs">
+                <path d="M20 20C20 10 12 4 4 6C3 14 9 21 20 20Z" fill="#007a4d" />
+                <path d="M20 20C20 9 29 4 36 6C37 14 31 21 20 20Z" fill="#007a4d" opacity="0.9" />
+                <path d="M20 20C13 25 8 32 8 38C17 38 22 31 20 20Z" fill="#059669" opacity="0.85" />
+                <path d="M20 20C27 25 32 32 32 38C23 38 18 31 20 20Z" fill="#059669" opacity="0.85" />
+              </svg>
+            )}
           </div>
           <div className="flex flex-col text-left">
             <span className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight leading-none">

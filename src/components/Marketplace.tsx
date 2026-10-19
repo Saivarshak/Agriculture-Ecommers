@@ -18,7 +18,8 @@ import {
   Edit2,
   Plus,
   RotateCcw,
-  X
+  X,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Product, ProductCategory, LanguageCode, AdCard, SiteStructureConfig, CategoryNode } from '../types';
 import { translations } from '../data/translations';
@@ -26,6 +27,7 @@ import { getProductLocalized } from '../data/productTranslations';
 import { CategoryNavPanel } from './CategoryNavPanel';
 import { EditProductModal } from './EditProductModal';
 import { AdminProductManagerModal } from './AdminProductManagerModal';
+import { AdminImageManagerModal } from './AdminImageManagerModal';
 import { StorageService } from '../services/storage';
 import { SHOP_CATEGORIES, productMatchesCategory, smoothScrollToCategory, smoothScrollToItem } from '../utils/categoryMatcher';
 
@@ -59,6 +61,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
   categories = [],
   selectedCategoryId = null,
   onSelectCategoryNode,
+  siteStructure,
   currentCategory,
   onSelectCategory,
   onSelectProduct,
@@ -82,6 +85,10 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isProductManagerOpen, setIsProductManagerOpen] = useState(false);
   const [adminNotice, setAdminNotice] = useState<string | null>(null);
+
+  // Direct Image Management Modal state
+  const [imageTargetProduct, setImageTargetProduct] = useState<Product | null>(null);
+  const [isGlobalImageManagerOpen, setIsGlobalImageManagerOpen] = useState(false);
 
   const handleSaveProduct = (updated: Product) => {
     StorageService.updateProduct(updated);
@@ -232,11 +239,27 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
           <div className="relative rounded-2xl overflow-hidden bg-stone-900 border border-stone-200 shadow-sm flex-1 min-h-[380px] lg:min-h-[420px] flex items-center p-6 sm:p-10">
             {/* Full Poster Image Background */}
             <img
-              src="/src/assets/images/xiva_farm_poster_1791974208276.jpg"
+              src={siteStructure?.heroBgImage || "/src/assets/images/xiva_farm_poster_1791974208276.jpg"}
               alt="Fresh from Farmers to Your Home - AgriShop / Xiva.Org"
               referrerPolicy="no-referrer"
               className="absolute inset-0 w-full h-full object-cover object-center"
             />
+
+            {/* Admin Change Hero Banner Image Button */}
+            {isAdmin && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImageTargetProduct(null);
+                  setIsGlobalImageManagerOpen(true);
+                }}
+                className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-xl bg-black/65 hover:bg-black/85 text-white text-xs font-bold flex items-center gap-1.5 border border-white/20 backdrop-blur-xs cursor-pointer transition-all shadow-md group/btn"
+                title="Admin: Update Hero Banner Image"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-emerald-400 group-hover/btn:scale-110 transition-transform" />
+                <span>Change Banner Image</span>
+              </button>
+            )}
 
             {/* Gradient Scrim on Left so text is crisp and readable */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/30" />
@@ -342,7 +365,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
 
             {/* Embedded Landscape Image */}
             <img
-              src="/src/assets/images/sustainable_farming_promo_1791974229133.jpg"
+              src={siteStructure?.promoCardImage || "/src/assets/images/sustainable_farming_promo_1791974229133.jpg"}
               alt="Farmer in organic field"
               className="absolute right-0 bottom-0 top-0 w-32 h-full object-cover object-center rounded-r-2xl"
             />
@@ -400,6 +423,16 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
             >
               <Plus className="w-3.5 h-3.5 text-emerald-300" />
               <span>New Crop</span>
+            </button>
+            <button
+              onClick={() => {
+                setImageTargetProduct(null);
+                setIsGlobalImageManagerOpen(true);
+              }}
+              className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-200 font-bold text-xs py-2 px-3 rounded-xl border border-emerald-600/70 transition-colors shadow-xs cursor-pointer"
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Image Manager</span>
             </button>
             <button
               onClick={onNavigateToAdmin}
@@ -645,13 +678,26 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
                   </div>
 
                   {/* Product Image (Centered on clean white) */}
-                  <div className="relative aspect-square w-full my-2 flex items-center justify-center overflow-hidden rounded-xl bg-stone-50/50">
+                  <div className="relative aspect-square w-full my-2 flex items-center justify-center overflow-hidden rounded-xl bg-stone-50/50 group/img">
                     <img
                       src={product.image}
                       alt={localized.name}
                       referrerPolicy="no-referrer"
                       className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setImageTargetProduct(product);
+                        }}
+                        className="absolute bottom-1.5 right-1.5 px-2 py-1 rounded-lg bg-black/75 hover:bg-black/90 text-white text-[10px] font-bold flex items-center gap-1 shadow-md transition-all z-20 cursor-pointer"
+                        title="Admin: Change product image"
+                      >
+                        <ImageIcon className="w-3 h-3 text-emerald-400" />
+                        <span>Change</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Body Content */}
@@ -754,6 +800,22 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
         onDeleteProduct={handleDeleteProduct}
         onNavigateToAdminStudio={onNavigateToAdmin || (() => {})}
       />
+
+      {/* Admin Image Manager Modal (For Product or Global Banner) */}
+      {(imageTargetProduct || isGlobalImageManagerOpen) && (
+        <AdminImageManagerModal
+          isOpen={Boolean(imageTargetProduct || isGlobalImageManagerOpen)}
+          targetProduct={imageTargetProduct}
+          targetImageId={imageTargetProduct ? `img_prod_${imageTargetProduct.id}` : 'img_hero_main'}
+          onClose={() => {
+            setImageTargetProduct(null);
+            setIsGlobalImageManagerOpen(false);
+          }}
+          onImageSaved={() => {
+            if (onRefreshProducts) onRefreshProducts();
+          }}
+        />
+      )}
     </div>
   );
 };

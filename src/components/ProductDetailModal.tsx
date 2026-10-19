@@ -12,12 +12,14 @@ import {
   TrendingUp,
   ThumbsUp,
   AlertCircle,
-  Edit2
+  Edit2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Product, Review, User, LanguageCode } from '../types';
 import { translations } from '../data/translations';
 import { StorageService } from '../services/storage';
 import { getProductLocalized } from '../data/productTranslations';
+import { AdminImageManagerModal } from './AdminImageManagerModal';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -28,6 +30,7 @@ interface ProductDetailModalProps {
   onOpenOrders: () => void;
   isAdmin?: boolean;
   onEditAsAdmin?: (product: Product) => void;
+  onRefreshProduct?: () => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -38,13 +41,21 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   language,
   onOpenOrders,
   isAdmin = false,
-  onEditAsAdmin
+  onEditAsAdmin,
+  onRefreshProduct
 }) => {
   if (!product) return null;
 
   const t = translations[language];
   const loc = getProductLocalized(product.id, product.name, product.category, language, product.description, product.unit);
   const [quantity, setQuantity] = useState(1);
+  const [activeImage, setActiveImage] = useState(product.image);
+  const [isImageManagerOpen, setIsImageManagerOpen] = useState(false);
+
+  React.useEffect(() => {
+    setActiveImage(product.image);
+  }, [product.image]);
+
   const [reviews, setReviews] = useState<Review[]>(() => {
     return StorageService.getReviews().filter((r) => r.productId === product.id);
   });
@@ -135,9 +146,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 sm:p-8">
           {/* Left Column: Image and Origin Badge */}
           <div className="space-y-4">
-            <div className="aspect-[4/3] rounded-xl overflow-hidden bg-stone-100 border border-stone-200 relative">
+            <div className="aspect-[4/3] rounded-xl overflow-hidden bg-stone-100 border border-stone-200 relative group">
               <img
-                src={product.image}
+                src={activeImage || product.image}
                 alt={product.name}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
@@ -147,6 +158,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   if (fallback) fallback.style.display = 'flex';
                 }}
               />
+
+              {/* Admin Change Image Button */}
+              {isAdmin && (
+                <button
+                  onClick={() => setIsImageManagerOpen(true)}
+                  className="absolute top-3 right-3 bg-black/75 hover:bg-black/90 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer transition-all z-20 backdrop-blur-2xs"
+                  title="Admin: Update this product's image"
+                >
+                  <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Change Image</span>
+                </button>
+              )}
+
               <div
                 id={`fallback-${product.id}`}
                 style={{ display: 'none' }}
@@ -163,6 +187,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <span>{t.zeroMiddlemanBadge}</span>
               </div>
             </div>
+
+            {/* Multiple Product Gallery Images (if available) */}
+            {product.images && product.images.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {[product.image, ...product.images].map((imgUrl, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(imgUrl)}
+                    className={`w-14 h-14 rounded-xl border-2 overflow-hidden shrink-0 transition-all cursor-pointer ${
+                      activeImage === imgUrl ? 'border-[#007a4d] ring-2 ring-[#007a4d]/20 scale-105' : 'border-stone-200 opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Farm Origin Box */}
             <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-2">
@@ -519,6 +560,24 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Admin Image Manager Modal */}
+      {isImageManagerOpen && (
+        <AdminImageManagerModal
+          isOpen={isImageManagerOpen}
+          targetProduct={product}
+          targetImageId={`img_prod_${product.id}`}
+          onClose={() => setIsImageManagerOpen(false)}
+          onImageSaved={() => {
+            const updatedProducts = StorageService.getProducts();
+            const reloaded = updatedProducts.find((p) => p.id === product.id);
+            if (reloaded) {
+              setActiveImage(reloaded.image);
+            }
+            if (onRefreshProduct) onRefreshProduct();
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -495,6 +495,7 @@ export default function App() {
           setSelectedProduct(null);
           handleSelectTab('admin');
         }}
+        onRefreshProduct={handleRefreshData}
       />
 
       {/* Item Added to Cart Green Popup with "Check in cart" CTA */}

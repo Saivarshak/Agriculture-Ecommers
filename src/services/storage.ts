@@ -8,7 +8,8 @@ import {
   LanguageCode,
   AdCard,
   SiteStructureConfig,
-  CategoryNode
+  CategoryNode,
+  ManagedImage
 } from '../types';
 import {
   DEFAULT_USER,
@@ -32,7 +33,8 @@ const STORAGE_KEYS = {
   LANGUAGE: 'xiva_language',
   ADS: 'xiva_ads_v2',
   SITE_STRUCTURE: 'xiva_site_structure_v2',
-  CATEGORIES: 'xiva_categories_v2'
+  CATEGORIES: 'xiva_categories_v2',
+  IMAGES: 'xiva_managed_images_v2'
 };
 
 export class StorageService {
@@ -528,5 +530,26 @@ export class StorageService {
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
     return INITIAL_CATEGORIES;
   }
+
+  // Centralized Website Images Storage
+  static getManagedImages(): ManagedImage[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.IMAGES);
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static saveManagedImages(images: ManagedImage[]): void {
+    localStorage.setItem(STORAGE_KEYS.IMAGES, JSON.stringify(images));
+  }
+
+  static resetManagedImages(): void {
+    localStorage.removeItem(STORAGE_KEYS.IMAGES);
+  }
 }
+
 

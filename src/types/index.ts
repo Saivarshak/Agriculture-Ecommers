@@ -96,6 +96,7 @@ export interface Product {
   farmDistanceKm: number;
   organicCertification: string;
   image: string;
+  images?: string[];
   description: string;
   nutrition: string;
   mandiPriceBenchmark?: number;
@@ -185,6 +186,8 @@ export interface SiteStructureConfig {
   heroSubtitle: string;
   heroDescription: string;
   heroBgImage: string;
+  promoCardImage?: string;
+  logoImage?: string;
   heroCtaExploreText: string;
   heroCtaFarmerText: string;
   mandiTickerEnabled: boolean;
@@ -195,3 +198,49 @@ export interface SiteStructureConfig {
   topAnnouncementNotice: string;
   topAnnouncementEnabled: boolean;
 }
+
+export type ImageSection =
+  | 'product'
+  | 'category'
+  | 'banner_hero'
+  | 'banner_promo'
+  | 'ad'
+  | 'brand_logo'
+  | 'general';
+
+export interface ImageVersionHistory {
+  id: string;
+  url: string;
+  updatedAt: string;
+  updatedBy: string;
+  note?: string;
+  fileName?: string;
+  fileSize?: string;
+}
+
+export interface ManagedImage {
+  id: string;
+  title: string;
+  section: ImageSection;
+  targetId: string;
+  targetName: string;
+  url: string;
+  fallbackUrl: string;
+  history: ImageVersionHistory[];
+  updatedAt: string;
+  updatedBy: string;
+  fileType?: string;
+  dimensions?: string;
+  fileSize?: string;
+  tags?: string[];
+  isCustomUploaded?: boolean;
+}
+
+export interface ImageValidationResult {
+  valid: boolean;
+  error?: string;
+  fileType?: string;
+  fileSize?: string;
+  dimensions?: string;
+}
+

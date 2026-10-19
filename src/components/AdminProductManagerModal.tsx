@@ -8,9 +8,11 @@ import {
   CheckCircle2,
   Package,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Product, ProductCategory } from '../types';
+import { AdminImageManagerModal } from './AdminImageManagerModal';
 
 interface AdminProductManagerModalProps {
   isOpen: boolean;
@@ -33,6 +35,7 @@ export const AdminProductManagerModal: React.FC<AdminProductManagerModalProps> =
 }) => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [selectedImageProduct, setSelectedImageProduct] = useState<Product | null>(null);
 
   if (!isOpen) return null;
 
@@ -168,10 +171,19 @@ export const AdminProductManagerModal: React.FC<AdminProductManagerModalProps> =
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => onEditProduct(prod)}
-                    className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-[#007a4d] text-[#007a4d] hover:text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-emerald-200 hover:border-[#007a4d] transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-[#007a4d] text-[#007a4d] hover:text-white font-bold text-xs px-3 py-2 rounded-xl border border-emerald-200 hover:border-[#007a4d] transition-all cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>Edit</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedImageProduct(prod)}
+                    className="inline-flex items-center gap-1.5 bg-stone-100 hover:bg-emerald-50 text-stone-700 hover:text-[#007a4d] font-bold text-xs px-2.5 py-2 rounded-xl border border-stone-200 hover:border-emerald-300 transition-all cursor-pointer"
+                    title="Change / Manage Crop Image"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Image</span>
                   </button>
 
                   <button
@@ -205,6 +217,19 @@ export const AdminProductManagerModal: React.FC<AdminProductManagerModalProps> =
           </button>
         </div>
       </div>
+
+      {/* Direct Image Manager for selected product */}
+      {selectedImageProduct && (
+        <AdminImageManagerModal
+          isOpen={Boolean(selectedImageProduct)}
+          targetProduct={selectedImageProduct}
+          targetImageId={`img_prod_${selectedImageProduct.id}`}
+          onClose={() => setSelectedImageProduct(null)}
+          onImageSaved={() => {
+            // Updated
+          }}
+        />
+      )}
     </div>
   );
 };

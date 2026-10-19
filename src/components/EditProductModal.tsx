@@ -12,6 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Product, ProductCategory } from '../types';
+import { ImageRegistryService } from '../services/imageRegistry';
 
 export const PRODUCT_IMAGE_PRESETS = [
   { label: 'Lush Farm Harvest Spread', url: '/src/assets/images/hero_farm_produce_spread_1791160693688.jpg' },
@@ -71,6 +72,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData) return;
+    ImageRegistryService.updateProductImageDirect(formData.id, formData.image, formData.images);
     onSave(formData);
     setSuccessMessage('Product updated successfully!');
     setTimeout(() => {
@@ -249,11 +251,45 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             </div>
           </div>
 
-          {/* Image Selection */}
+          {/* Image Selection with Upload, Presets, and URL */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5">
-              Product Image
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                Primary Product Image
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const input = document.getElementById('edit-product-file-input');
+                  if (input) input.click();
+                }}
+                className="text-xs font-bold text-[#007a4d] hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <span>Upload from Device</span>
+              </button>
+              <input
+                id="edit-product-file-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const validation = await ImageRegistryService.validateFile(file);
+                    if (!validation.valid) {
+                      alert(validation.error || 'Invalid image file.');
+                      return;
+                    }
+                    const dataUrl = await ImageRegistryService.fileToDataUrl(file);
+                    handleChange('image', dataUrl);
+                  } catch {
+                    alert('Failed to upload image file.');
+                  }
+                }}
+                className="hidden"
+              />
+            </div>
+
             <div className="flex items-center gap-3 mb-2">
               <div className="w-16 h-16 rounded-xl border border-stone-200 overflow-hidden bg-stone-100 shrink-0 flex items-center justify-center p-1">
                 <img
@@ -266,7 +302,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 type="text"
                 value={formData.image}
                 onChange={(e) => handleChange('image', e.target.value)}
-                placeholder="Image URL or choose preset below"
+                placeholder="Image URL, upload file, or choose preset below"
                 className="flex-1 bg-white text-xs text-stone-800 rounded-xl px-3 py-2 border border-stone-300 focus:outline-none focus:border-[#007a4d]"
               />
             </div>
